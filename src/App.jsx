@@ -5,9 +5,9 @@ import DetailDrawer from './components/DetailDrawer'
 import DataCheck from './components/DataCheck'
 import { CanhBaoTonDong, XuHuongBu, nhanCacKy } from './components/TrendSections'
 import { AlertTriangle, Download, FilterSelect, LoadingBlock, Panel, RefreshCw, RefreshingBar, Tabs } from './components/ui'
-import { fmtNgay, layDanhSachKhoi, layDanhSachSnapshot, taiBaoCao } from './lib/report'
+import { fmtNgay, layDanhSachKhoi, layDanhSachSnapshot, snapshotTheoThang, taiBaoCao } from './lib/report'
 import { canhBaoTonDong, dungMoHinh } from './lib/model'
-import { fmtHs, fmtPct, fmtSo, fmtTy } from './lib/format'
+import { fmtHs, fmtPct, fmtSo, fmtTr, fmtTy } from './lib/format'
 import { xuatExcel } from './lib/exportExcel'
 
 const nho = (k, v) => {
@@ -18,6 +18,9 @@ const nho = (k, v) => {
     return null
   }
 }
+
+// "NGOẠI KHOA" -> "Ngoại Khoa"
+const tenKhoi = (s) => s.toLocaleLowerCase('vi').replace(/(^|\s)(\S)/g, (_, a, b) => a + b.toLocaleUpperCase('vi'))
 
 const TABS = [
   { key: 'excel', label: 'Tổng quan', sub: 'Tồn kho hàng đang kinh doanh theo BU / nhóm SP, bố cục như file báo cáo Excel' },
@@ -101,7 +104,6 @@ function StatCard({ label, swatch, value, unit, sub, warn }) {
 
 export default function App() {
   const [snapshots, setSnapshots] = useState([])
-  const [khois, setKhois] = useState([])
   const [cycledate, setCycledate] = useState(null)
   const [khoi, setKhoi] = useState(null)
   const [data, setData] = useState(null)
@@ -119,9 +121,11 @@ export default function App() {
     Promise.all([layDanhSachSnapshot(), layDanhSachKhoi()])
       .then(([s, k]) => {
         setSnapshots(s)
-        setKhois(k)
-        setKhoi((cur) => (k.includes(cur) ? cur : k.includes(nho('inv.khoi')) ? nho('inv.khoi') : k[0] || null))
-        setCycledate((cur) => (s.includes(cur) ? cur : s[0] || null))
+        // hiện chỉ có khối Ngoại khoa nên không cần bộ lọc khối
+        setKhoi(k[0] || null)
+        // mỗi tháng chỉ dùng snapshot mới nhất
+        const thang = snapshotTheoThang(s).map((x) => x.cycledate)
+        setCycledate((cur) => (thang.includes(cur) ? cur : thang[0] || null))
       })
       .catch((e) => setErr(e.message))
   }, [nonce])
@@ -138,7 +142,7 @@ export default function App() {
 
   const view = useMemo(() => {
     if (!data) return null
-    const model = { ...dungMoHinh(data.rows, data.periods), khoiTen: khoi }
+    const model = { ...dungMoHinh(data.rows, data.periods, data.ten), khoiTen: tenKhoi(khoi) }
     const canhBao = canhBaoTonDong(model.khoi, data.periods)
     const nhanKy = nhanCacKy(data.periods, cycledate)
     return { model, canhBao, nhanKy }
@@ -171,8 +175,7 @@ export default function App() {
             <div className="leading-tight">
               <div className="text-base font-bold text-slate-900 md:text-lg">BÁO CÁO TỒN KHO</div>
               <div className="mt-0.5 text-xs text-slate-500">
-                {khoi ? `Khối ${khoi}` : '…'}
-                {cycledate && ` · tại ${fmtNgay(cycledate)}`} · Đơn vị: triệu VNĐ, chỉ hàng đang kinh doanh
+                {khoi ? `Khối ${tenKhoi(khoi)} - Hàng đang kinh doanh` : '…'}
               </div>
             </div>
           </div>
@@ -212,18 +215,9 @@ export default function App() {
         <div className="flex flex-wrap items-center gap-2.5 border-t border-slate-100 px-6 py-2">
           <span className="pl-1 text-[11px] font-semibold uppercase tracking-wide text-slate-500">Lọc</span>
           <FilterSelect
-            label="Khối"
-            value={khoi}
-            options={khois.map((x) => ({ value: x, label: x }))}
-            onChange={(v) => {
-              setKhoi(v)
-              nho('inv.khoi', v)
-            }}
-          />
-          <FilterSelect
-            label="Snapshot"
+            label="Tháng cập nhật"
             value={cycledate}
-            options={snapshots.map((s, i) => ({ value: s, label: fmtNgay(s), hint: i === 0 ? 'mới nhất' : null }))}
+            options={snapshotTheoThang(snapshots).map((x) => ({ value: x.cycledate, label: x.thang, hint: `số liệu ${fmtNgay(x.cycledate)}` }))}
             onChange={setCycledate}
           />
         </div>
@@ -290,6 +284,19 @@ export default function App() {
 
             {tab === 'kiem_tra' ? (
               <DataCheck cycledate={cycledate} khoi={khoi} />
+            ) : tab === 'excel' ? (
+              <div className="space-y-4">
+                {view.model.bus.map((g) => (
+                  <Panel
+                    key={g.bu}
+                    title={g.ten}
+                    subtitle={`${g.nhom.length} nhóm SP · tổng tồn ${fmtTr(g.tong.tong_kd)} triệu VNĐ · ${fmtPct(k.tong_kd ? g.tong.tong_kd / k.tong_kd : null)} tồn khối`}
+                    right={<span className="text-[11px] text-slate-400">Đơn vị: triệu VNĐ · bấm ô số để xem chi tiết lô</span>}
+                  >
+                    <ReportTable g={g} periods={data.periods} onDrill={onDrill} />
+                  </Panel>
+                ))}
+              </div>
             ) : (
               <Panel
                 title={tabInfo.label}
@@ -301,36 +308,30 @@ export default function App() {
                       <span>
                         <span className="text-red-600">▲</span> tồn tăng · <span className="text-emerald-700">▼</span> tồn giảm
                       </span>
-                    ) : tab !== 'excel' ? (
+                    ) : (
                       <span className="flex items-center gap-1.5">
                         <span className="inline-block h-2.5 w-2.5 rounded-sm border border-red-200 bg-red-50" />
                         hệ số &gt; {NGUONG.he_so} tháng · CLC &gt; {fmtPct(NGUONG.pct_clc)} · hàng xấu &gt; {fmtPct(NGUONG.pct_xau)}
                       </span>
-                    ) : null}
+                    )}
                   </div>
                 }
               >
-                {tab === 'excel' ? (
-                  <div className="p-3">
-                    <ReportTable model={view.model} periods={data.periods} onDrill={onDrill} />
-                  </div>
-                ) : (
-                  <CompactTable model={view.model} periods={data.periods} tab={tab} onDrill={onDrill} />
-                )}
+                <CompactTable model={view.model} periods={data.periods} tab={tab} onDrill={onDrill} />
               </Panel>
             )}
 
             {tab !== 'kiem_tra' && (
               <div className="grid gap-4 xl:grid-cols-2">
-                <CanhBaoTonDong khoiTen={khoi} cot={view.canhBao} nhanKy={view.nhanKy} />
-                <XuHuongBu khoiTen={khoi} model={view.model} periods={data.periods} nhanKy={view.nhanKy} />
+                <CanhBaoTonDong khoiTen={tenKhoi(khoi)} cot={view.canhBao} nhanKy={view.nhanKy} />
+                <XuHuongBu khoiTen={tenKhoi(khoi)} model={view.model} periods={data.periods} nhanKy={view.nhanKy} />
               </div>
             )}
           </>
         )}
       </main>
 
-      {drill && <DetailDrawer drill={drill} cycledate={cycledate} khoi={khoi} onClose={closeDrill} />}
+      {drill && <DetailDrawer drill={drill} cycledate={cycledate} khoi={khoi} tenNhom={data?.ten.nhom} onClose={closeDrill} />}
     </div>
   )
 }

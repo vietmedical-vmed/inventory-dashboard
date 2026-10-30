@@ -30,6 +30,9 @@ Quy tắc phân loại (giống công thức Excel):
   `warnington` là chuẩn chính thức cho CLC (chốt 30/10/2026). CLC tính theo cột này thấp hơn file Excel cũ,
   vì file Excel cũ tính theo "Ngày nhập thực tế". Từ 29/10/2026 không so CLC trực tiếp với các kỳ Excel cũ.
 - Chỉ tính mặt hàng có `pl_hang_hoa = 'Hàng đang kinh doanh'`. Giá trị = `closeinventory × don_gia / 10^6`.
+- **Tên hiển thị** BU / nhóm SP lấy theo danh mục dùng chung (`shared.dm_bu`, `shared.dm_nhom_san_pham`) qua
+  `app_inventory.map_bu` và `map_nhom`; nhóm không có trong danh mục (Máy chính, Others-NSCT, Part) giữ tên và
+  cách gom như file Excel để so sánh được với các kỳ đã chốt.
 - Phiên bản master dùng cho một snapshot = bản có `updated_at` mới nhất ≤ ngày snapshot (chưa có thì lấy bản sớm nhất).
 
 Các kỳ so sánh = 3 ngày cuối tháng trước tháng của snapshot. Kỳ nào đã chốt (`ton_kho_ky`) thì dùng số chốt;

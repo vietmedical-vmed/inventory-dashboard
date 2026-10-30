@@ -4,8 +4,9 @@ import { cong, dongTinh, pct } from './report'
  * Dựng mô hình báo cáo giống sheet Excel:
  *   khối -> các BU (theo thứ tự cấu hình) -> các nhóm SP + dòng Tổng
  * Mỗi dòng có số kỳ này + so sánh các kỳ trước (periods: cũ -> mới).
+ * ten: tên hiển thị theo danh mục (g.ten, r.ten); khoá dữ liệu vẫn là tên Excel.
  */
-export function dungMoHinh(rows, periods) {
+export function dungMoHinh(rows, periods, ten) {
   const pTruoc = periods[periods.length - 1] // kỳ trước liền kề
   const p2 = periods[periods.length - 2] // 2 tháng trước
 
@@ -33,11 +34,12 @@ export function dungMoHinh(rows, periods) {
       list.sort((a, b) => a.thu_tu - b.thu_tu || a.nhom_sp.localeCompare(b.nhom_sp, 'vi'))
       const nhom = list.map((r) => {
         const d = dongTinh(r)
-        return { ...d, ...soSanh(bu, r.nhom_sp, d) }
+        return { ...d, ...soSanh(bu, r.nhom_sp, d), ten: ten ? ten.nhom(bu, r.nhom_sp) : r.nhom_sp }
       })
       const tong = cong(list)
       return {
         bu,
+        ten: ten ? ten.bu(bu) : bu,
         thu_tu: Math.min(...list.map((r) => r.thu_tu)),
         nhom,
         tong: { ...tong, ...soSanh(bu, '', tong) },

@@ -5,7 +5,7 @@ import { taiCsv } from '../lib/exportExcel'
 
 const TRANG_THAI = { USABLE: 'Đang SD', HET_HAN: 'Hết date', HUY: 'Chờ hủy', LOI_KT: 'Lỗi/KT' }
 
-export default function DetailDrawer({ drill, cycledate, khoi, onClose }) {
+export default function DetailDrawer({ drill, cycledate, khoi, tenNhom = (bu, n) => n, onClose }) {
   const [rows, setRows] = useState(null)
   const [err, setErr] = useState(null)
   const [q, setQ] = useState('')
@@ -33,7 +33,7 @@ export default function DetailDrawer({ drill, cycledate, khoi, onClose }) {
     )
   }, [rows, q])
   const tong = loc.reduce((s, r) => s + Number(r.gia_tri || 0), 0)
-  const tieuDe = [drill.bu ? `BU ${drill.bu}` : `Khối ${khoi}`, drill.nhom, drill.label].filter(Boolean).join(' · ')
+  const tieuDe = [drill.bu ? drill.buTen || drill.bu : `Khối ${khoi}`, drill.nhom && (drill.nhomTen || drill.nhom), drill.label].filter(Boolean).join(' · ')
 
   return (
     <div className="fixed inset-0 z-40 flex justify-end bg-black/30" onClick={onClose}>
@@ -85,7 +85,7 @@ export default function DetailDrawer({ drill, cycledate, khoi, onClose }) {
                   <tr key={i} className="border-b border-line hover:bg-band">
                     <td className="px-2 py-1 font-mono">{r.ma_bravo}</td>
                     <td className="max-w-[260px] truncate px-2 py-1" title={r.ten_mat_hang}>{r.ten_mat_hang}</td>
-                    <td className="whitespace-nowrap px-2 py-1">{r.nhom_sp}</td>
+                    <td className="whitespace-nowrap px-2 py-1">{tenNhom(r.bu, r.nhom_sp)}</td>
                     <td className="whitespace-nowrap px-2 py-1">{r.warehousecode}</td>
                     <td className="px-2 py-1">{r.so_lo}</td>
                     <td className="max-w-[120px] truncate px-2 py-1" title={r.serialcode}>{r.serialcode}</td>

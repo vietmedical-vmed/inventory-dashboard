@@ -82,10 +82,11 @@ export function CanhBaoTonDong({ khoiTen, cot, nhanKy }) {
 export function XuHuongBu({ khoiTen, model, periods, nhanKy }) {
   const dong = model.bus.map((g) => ({
     bu: g.bu,
+    ten: g.ten,
     values: [...periods.map((p) => p.bang.get(g.bu, '', 'tong_kd')), g.tong.tong_kd],
   }))
   const tong = [...periods.map((p) => p.bang.get('', '', 'tong_kd')), model.khoi.tong_kd]
-  const series = dong.map((d, i) => ({ key: d.bu, label: d.bu, color: BU_COLORS[i] || 'var(--muted)', values: d.values }))
+  const series = dong.map((d, i) => ({ key: d.bu, label: d.ten, color: BU_COLORS[i] || 'var(--muted)', values: d.values }))
 
   return (
     <Panel title="Xu hướng tồn kho theo BU" subtitle={`Khối ${khoiTen} · hàng đang KD · triệu VNĐ`}>
@@ -98,7 +99,7 @@ export function XuHuongBu({ khoiTen, model, periods, nhanKy }) {
             <td className="whitespace-nowrap px-3 py-1.5">
               <span className="flex items-center gap-1.5">
                 <span className="h-2.5 w-2.5 rounded-sm" style={{ background: BU_COLORS[i] }} aria-hidden />
-                {d.bu}
+                {d.ten}
               </span>
             </td>
             {d.values.map((v, j) => <td key={j} className={td}>{fmtTr(v)}</td>)}

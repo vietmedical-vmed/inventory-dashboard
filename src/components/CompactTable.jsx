@@ -121,7 +121,7 @@ export default function CompactTable({ model, periods, tab, onDrill }) {
       return n
     })
 
-  const o = (r, c, level, bu, nhom) => {
+  const o = (r, c, level, bu, nhom, buTen, nhomTen) => {
     const v = c.val(r)
     const click = onDrill && c.drill !== undefined && typeof v === 'number' && Math.abs(v) >= 0.5
     const mx = level === 'khoi' ? 0 : maxes[level]?.[c.key]
@@ -141,7 +141,7 @@ export default function CompactTable({ model, periods, tab, onDrill }) {
         key={c.key}
         style={style}
         className={`num whitespace-nowrap px-3 py-2 text-right ${c.strong ? 'font-semibold text-slate-900' : ''} ${c.muted ? 'text-slate-500' : ''} ${warn ? 'bg-red-50 font-semibold text-red-700' : ''} ${click ? 'cursor-pointer hover:text-blue-600 hover:underline' : ''}`}
-        onClick={click ? () => onDrill({ bu, nhom, cot: c.drill, label: c.label }) : undefined}
+        onClick={click ? () => onDrill({ bu, nhom, buTen, nhomTen, cot: c.drill, label: c.label }) : undefined}
         title={warn ? 'Vượt ngưỡng cảnh báo' : click ? 'Xem chi tiết lô' : undefined}
       >
         <GiaTri c={c} v={v} />
@@ -183,17 +183,17 @@ export default function CompactTable({ model, periods, tab, onDrill }) {
                   <td className="sticky left-0 z-[1] bg-white px-3 py-2">
                     <button className="flex items-center gap-2 hover:text-blue-600" onClick={() => toggle(g.bu)} aria-expanded={open}>
                       <ChevronRight size={14} className={`text-slate-400 transition-transform ${open ? 'rotate-90' : ''}`} />
-                      BU {g.bu}
+                      {g.ten}
                       <span className="text-[11px] font-normal text-slate-400">{g.nhom.length} nhóm</span>
                     </button>
                   </td>
-                  {cols.map((c) => o(g.tong, c, 'bu', g.bu, null))}
+                  {cols.map((c) => o(g.tong, c, 'bu', g.bu, null, g.ten))}
                 </tr>
                 {open &&
                   g.nhom.map((r, i) => (
                     <tr key={r.nhom_sp} className={`text-slate-700 hover:bg-blue-50/40 ${i % 2 ? 'bg-slate-50/50' : 'bg-white'}`}>
-                      <td className={`sticky left-0 z-[1] py-1.5 pl-10 pr-3 text-slate-600 ${i % 2 ? 'bg-[#f8f9fa]' : 'bg-white'}`}>{r.nhom_sp}</td>
-                      {cols.map((c) => o(r, c, 'nhom', g.bu, r.nhom_sp))}
+                      <td className={`sticky left-0 z-[1] py-1.5 pl-10 pr-3 text-slate-600 ${i % 2 ? 'bg-[#f8f9fa]' : 'bg-white'}`}>{r.ten}</td>
+                      {cols.map((c) => o(r, c, 'nhom', g.bu, r.nhom_sp, g.ten, r.ten))}
                     </tr>
                   ))}
               </Fragment>

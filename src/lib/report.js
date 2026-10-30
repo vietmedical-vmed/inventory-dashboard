@@ -118,10 +118,11 @@ export const layKiemTra = (cycledate, khoi) => rpc('kiem_tra', { p_cycledate: cy
  */
 export async function taiBaoCao(cycledate, khoi, snapshots) {
   const ky = kyTruoc(cycledate)
-  const [rows, info, daChot] = await Promise.all([
+  const [rows, info, daChot, ten] = await Promise.all([
     rpc('bao_cao', { p_cycledate: cycledate, p_khoi: khoi }),
     rpc('thong_tin_snapshot', { p_cycledate: cycledate, p_khoi: khoi }),
     rpc('ds_ton_kho_ky', { p_khoi: khoi, p_tu: ky[0], p_den: ky[ky.length - 1] }),
+    rpc('ds_ten_hien_thi'),
   ])
   const periods = await Promise.all(
     ky.map(async (k) => {
@@ -134,7 +135,23 @@ export async function taiBaoCao(cycledate, khoi, snapshots) {
       return { ky: k, nguon: `Ước tính từ snapshot ${fmtNgay(snap)}`, bang: bangKy(tuBaoCao(r)) }
     }),
   )
-  return { rows: num(rows), info: info?.[0] || null, periods }
+  return { rows: num(rows), info: info?.[0] || null, periods, ten: tenHienThi(ten) }
+}
+
+/** Tên BU / nhóm SP theo danh mục dùng chung; không có trong danh mục thì giữ tên Excel. */
+function tenHienThi(rows) {
+  const m = new Map(rows.map((r) => [`${r.bu}|${r.nhom_sp}`, r.ten]))
+  return {
+    bu: (bu) => m.get(`${bu}|`) || bu,
+    nhom: (bu, nhom) => m.get(`${bu}|${nhom}`) || nhom,
+  }
+}
+
+/** Snapshot mới nhất của mỗi tháng (danh sách snapshot đã sắp giảm dần). */
+export function snapshotTheoThang(snapshots) {
+  const out = []
+  for (const s of snapshots) if (!out.some((x) => x.thang === s.slice(0, 7))) out.push({ thang: s.slice(0, 7), cycledate: s })
+  return out
 }
 
 export const pct = (a, b) => (a == null || b == null || b === 0 ? null : (a - b) / b)

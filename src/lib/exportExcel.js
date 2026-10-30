@@ -80,7 +80,7 @@ export async function xuatExcel({ model, periods, cycledate, khoi, canhBao, nhan
     const dau = r
     for (const n of g.nhom) {
       const row = ws.getRow(r++)
-      row.values = [r - 1 === dau ? `BU ${g.bu}` : '', n.nhom_sp, ...giaTri(n)]
+      row.values = [r - 1 === dau ? g.ten : '', n.ten, ...giaTri(n)]
       dinhDang(row)
     }
     if (g.nhom.length > 1) ws.mergeCells(dau, 1, r - 1, 1)
