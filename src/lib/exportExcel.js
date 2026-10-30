@@ -26,8 +26,7 @@ export async function xuatExcel({ model, periods, cycledate, khoi, canhBao, nhan
   const wb = new ExcelJS.Workbook()
   const ws = wb.addWorksheet('Bao_cao', { views: [{ state: 'frozen', xSplit: 2, ySplit: 5 }] })
   const truoc = periods[periods.length - 1]
-  const p2 = periods[periods.length - 2]
-  const nCol = 20 + periods.length
+  const nCol = 18
 
   ws.mergeCells(1, 1, 1, 17)
   ws.getCell(1, 1).value = `BÁO CÁO TỒN KHO - KHỐI ${khoi} (tại ${fmtNgay(cycledate)})`
@@ -42,17 +41,13 @@ export async function xuatExcel({ model, periods, cycledate, khoi, canhBao, nhan
     'Hàng hết date, hỏng (Triệu)', 'Hàng đã duyệt chờ hủy (Triệu)', 'Hàng lỗi/KT (Triệu)', 'Tổng tồn kho - Hàng đang KD (Triệu VNĐ)',
     'Phân loại theo mức độ luân chuyển (Triệu VNĐ)', '', '', 'Tổng giá trị CLC (Triệu VNĐ)', 'GV bán trung bình tháng gần nhất (Triệu VNĐ)',
     'Hệ số tồn kho TB', `Giá trị kỳ trước (${fmtNgay(truoc.ky)}, Triệu VNĐ)`, '% Tăng/giảm so kỳ trước',
-    `% Δ Tổng GT hàng đang SD so 2 tháng trước (${fmtNgay(p2.ky)})`,
-    `% Δ (Hết date+Chờ hủy+Lỗi KT) so 2 tháng trước (${fmtNgay(p2.ky)})`,
-    'Tổng tồn kho - Hàng đang KD các kỳ trước (Triệu VNĐ)', ...periods.slice(1).map(() => ''),
   ]
-  const h2 = ['', '', ...COT_HSD.map((c) => c.label), '', '', '', '', '', ...COT_CLC.map((c) => c.label), '', '', '', '', '', '', '', ...periods.map((p) => fmtNgay(p.ky))]
+  const h2 = ['', '', ...COT_HSD.map((c) => c.label), '', '', '', '', '', ...COT_CLC.map((c) => c.label), '', '', '', '', '']
   ws.getRow(4).values = h1
   ws.getRow(5).values = h2
-  for (const c of [1, 2, 6, 7, 8, 9, 10, 14, 15, 16, 17, 18, 19, 20]) ws.mergeCells(4, c, 5, c)
+  for (const c of [1, 2, 6, 7, 8, 9, 10, 14, 15, 16, 17, 18]) ws.mergeCells(4, c, 5, c)
   ws.mergeCells(4, 3, 4, 5)
   ws.mergeCells(4, 11, 4, 13)
-  ws.mergeCells(4, 21, 4, nCol)
   for (const r of [4, 5]) {
     ws.getRow(r).eachCell({ includeEmpty: true }, (cell, c) => {
       if (c > nCol) return
@@ -66,13 +61,13 @@ export async function xuatExcel({ model, periods, cycledate, khoi, canhBao, nhan
   const giaTri = (r) => [
     r.hsd_tren_12t, r.hsd_6_12t, r.hsd_duoi_6t, r.dang_sd, r.het_han, r.cho_huy, r.loi_kt, r.tong_kd,
     r.clc_tren_24t, r.clc_tren_12t, r.clc_tren_06t, r.clc, r.gv_ban_tb ?? null, r.he_so ?? null,
-    r.ky_truoc ?? null, r.pct_ky_truoc ?? null, r.pct_dang_sd_2t ?? null, r.pct_xau_2t ?? null, ...r.lich_su.map((v) => v ?? null),
+    r.ky_truoc ?? null, r.pct_ky_truoc ?? null,
   ]
   const dinhDang = (row, kieu) => {
     row.eachCell({ includeEmpty: true }, (cell, c) => {
       if (c > nCol) return
       cell.border = { top: { style: 'thin' }, left: { style: 'thin' }, bottom: { style: 'thin' }, right: { style: 'thin' } }
-      if (c >= 3) cell.numFmt = kieu === 'pct' ? '0.0%' : c === 16 ? '0.00' : c >= 18 && c <= 20 ? '+0.0%;-0.0%' : '#,##0'
+      if (c >= 3) cell.numFmt = kieu === 'pct' ? '0.0%' : c === 16 ? '0.00' : c === 18 ? '+0.0%;-0.0%' : '#,##0'
       if (kieu === 'tong') {
         cell.font = { bold: true }
         cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: NEN } }
@@ -97,13 +92,6 @@ export async function xuatExcel({ model, periods, cycledate, khoi, canhBao, nhan
     row = ws.getRow(r++)
     const t = g.tong
     row.values = ['', 'Tỷ trọng/tổng giá trị tồn kho', ...giaTri(t).slice(0, 12).map((v) => (t.tong_kd ? v / t.tong_kd : null))]
-    dinhDang(row, 'pct')
-    const ls = t.lich_su
-    row = ws.getRow(r++)
-    row.values = ['', 'Tăng/giảm so tháng trước (Triệu VNĐ)', ...Array(7).fill(null), ls.at(-1) == null ? null : t.tong_kd - ls.at(-1), ...Array(10).fill(null), ...ls.map((v, i) => (i && v != null && ls[i - 1] != null ? v - ls[i - 1] : null))]
-    dinhDang(row)
-    row = ws.getRow(r++)
-    row.values = ['', '  % tăng/giảm so tháng trước', ...Array(7).fill(null), ls.at(-1) ? (t.tong_kd - ls.at(-1)) / ls.at(-1) : null, ...Array(10).fill(null), ...ls.map((v, i) => (i && v != null && ls[i - 1] ? (v - ls[i - 1]) / ls[i - 1] : null))]
     dinhDang(row, 'pct')
   }
   let row = ws.getRow(r++)

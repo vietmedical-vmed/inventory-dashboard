@@ -10,6 +10,8 @@ const COT_SO = [
   ...COT_CLC.map((c) => ({ ...c, nhom: 'clc' })),
   { key: 'clc', label: 'Tổng giá trị CLC', tong: true },
 ]
+// Cột sau phần giá trị: GV bán TB, hệ số, kỳ trước, % so kỳ trước
+const SO_COT_SAU = 4
 
 const th = 'border border-white/30 px-2 py-1.5 font-semibold text-white text-[11px] leading-tight align-middle'
 const tdl = 'border border-line px-2 py-1 whitespace-nowrap text-left'
@@ -20,7 +22,7 @@ function Delta({ v }) {
   return <span className={v > 0 ? 'text-bad' : v < 0 ? 'text-good' : ''}>{fmtPct(v, true)}</span>
 }
 
-function DongSo({ r, bu, nhom, onDrill, dam, periods }) {
+function DongSo({ r, bu, nhom, onDrill }) {
   return (
     <>
       {COT_SO.map((c) => {
@@ -41,59 +43,24 @@ function DongSo({ r, bu, nhom, onDrill, dam, periods }) {
       <td className={td}>{fmtHs(r.he_so)}</td>
       <td className={td}>{fmtTr(r.ky_truoc)}</td>
       <td className={td}><Delta v={r.pct_ky_truoc} /></td>
-      <td className={td}><Delta v={r.pct_dang_sd_2t} /></td>
-      <td className={td}><Delta v={r.pct_xau_2t} /></td>
-      {periods.map((p, i) => (
-        <td key={p.ky} className={`${td} ${dam ? 'font-semibold' : ''}`}>{fmtTr(r.lich_su[i])}</td>
-      ))}
     </>
   )
 }
 
-function DongTyTrong({ r, label, periods, className = '' }) {
+function DongTyTrong({ r, label, className = '' }) {
   return (
     <tr className={`text-ink2 italic ${className}`}>
       <td className={`${tdl} not-italic`} colSpan={2}>{label}</td>
       {COT_SO.map((c) => (
         <td key={c.key} className={td}>{r.tong_kd ? fmtPct(r[c.key] / r.tong_kd) : ''}</td>
       ))}
-      <td className={td} colSpan={6 + periods.length} />
+      <td className={td} colSpan={SO_COT_SAU} />
     </tr>
-  )
-}
-
-function DongTangGiam({ r, periods }) {
-  const ls = r.lich_su
-  const diff = (a, b) => (a == null || b == null ? null : a - b)
-  const last = ls[ls.length - 1]
-  const cells = (fn, fmt) => (
-    <>
-      {COT_SO.map((c) => (
-        <td key={c.key} className={td}>{c.key === 'tong_kd' ? fmt(fn(r.tong_kd, last)) : ''}</td>
-      ))}
-      <td className={td} colSpan={6} />
-      {periods.map((p, i) => (
-        <td key={p.ky} className={td}>{i === 0 ? '' : fmt(fn(ls[i], ls[i - 1]))}</td>
-      ))}
-    </>
-  )
-  return (
-    <>
-      <tr className="text-ink2">
-        <td className={`${tdl}`} colSpan={2}>Tăng/giảm so tháng trước (Triệu VNĐ)</td>
-        {cells(diff, fmtTr)}
-      </tr>
-      <tr className="text-ink2">
-        <td className={`${tdl} pl-5`} colSpan={2}>% tăng/giảm so tháng trước</td>
-        {cells((a, b) => (a == null || !b ? null : (a - b) / b), (v) => <Delta v={v} />)}
-      </tr>
-    </>
   )
 }
 
 export default function ReportTable({ model, periods, onDrill }) {
   const truoc = periods[periods.length - 1]
-  const p2 = periods[periods.length - 2]
   return (
     <div className="overflow-x-auto rounded-lg border border-line bg-surface">
       <table className="min-w-full border-collapse text-xs">
@@ -113,37 +80,28 @@ export default function ReportTable({ model, periods, onDrill }) {
             <th rowSpan={2} className={`${th} w-16`}>Hệ số tồn kho TB</th>
             <th rowSpan={2} className={`${th} w-24`}>Giá trị kỳ trước ({truoc && fmtNgay(truoc.ky)})</th>
             <th rowSpan={2} className={`${th} w-20`}>% tăng/giảm so kỳ trước</th>
-            <th rowSpan={2} className={`${th} w-24`}>% Δ GT đang SD so {p2 && fmtNgay(p2.ky)}</th>
-            <th rowSpan={2} className={`${th} w-24`}>% Δ (Hết date + Chờ hủy + Lỗi KT) so {p2 && fmtNgay(p2.ky)}</th>
-            <th colSpan={periods.length} className={th}>Tổng tồn kho - Hàng đang KD các kỳ trước</th>
           </tr>
           <tr className="bg-head-2">
             {COT_HSD.map((c) => <th key={c.key} className={th}>{c.label}</th>)}
             {COT_CLC.map((c) => <th key={c.key} className={th}>{c.label}</th>)}
-            {periods.map((p) => (
-              <th key={p.ky} className={th} title={p.nguon}>
-                {fmtNgay(p.ky)}
-                {p.nguon !== 'Đã chốt' && <span className="block font-normal opacity-80">{p.nguon === 'Chưa có số liệu' ? 'chưa có' : 'ước tính'}</span>}
-              </th>
-            ))}
           </tr>
         </thead>
         <tbody>
           {model.bus.map((g) => (
-            <BuBlock key={g.bu} g={g} periods={periods} onDrill={onDrill} />
+            <BuBlock key={g.bu} g={g} onDrill={onDrill} />
           ))}
           <tr className="bg-band font-bold">
             <td className={`${tdl} sticky left-0 bg-band`} colSpan={2}>KHỐI {model.khoiTen}</td>
-            <DongSo r={model.khoi} bu={null} nhom={null} onDrill={onDrill} dam periods={periods} />
+            <DongSo r={model.khoi} bu={null} nhom={null} onDrill={onDrill} />
           </tr>
-          <DongTyTrong r={model.khoi} label="TỶ TRỌNG/TỔNG GIÁ TRỊ TỒN KHO" periods={periods} className="font-semibold" />
+          <DongTyTrong r={model.khoi} label="TỶ TRỌNG/TỔNG GIÁ TRỊ TỒN KHO" className="font-semibold" />
         </tbody>
       </table>
     </div>
   )
 }
 
-function BuBlock({ g, periods, onDrill }) {
+function BuBlock({ g, onDrill }) {
   return (
     <>
       {g.nhom.map((r, i) => (
@@ -154,16 +112,15 @@ function BuBlock({ g, periods, onDrill }) {
             </td>
           )}
           <td className={`${tdl}`}>{r.nhom_sp}</td>
-          <DongSo r={r} bu={g.bu} nhom={r.nhom_sp} onDrill={onDrill} periods={periods} />
+          <DongSo r={r} bu={g.bu} nhom={r.nhom_sp} onDrill={onDrill} />
         </tr>
       ))}
       <tr className="bg-band font-bold">
         <td className={`${td} sticky left-0 bg-band`} />
         <td className={`${tdl}`}>Tổng</td>
-        <DongSo r={g.tong} bu={g.bu} nhom={null} onDrill={onDrill} dam periods={periods} />
+        <DongSo r={g.tong} bu={g.bu} nhom={null} onDrill={onDrill} />
       </tr>
-      <DongTyTrong r={g.tong} label="Tỷ trọng/tổng giá trị tồn kho" periods={periods} />
-      <DongTangGiam r={g.tong} periods={periods} />
+      <DongTyTrong r={g.tong} label="Tỷ trọng/tổng giá trị tồn kho" />
       <tr><td colSpan={99} className="h-2 bg-page" /></tr>
     </>
   )
