@@ -266,6 +266,7 @@ as $$
       when 'hsd_6_12t'    then r.nhom_trang_thai = 'USABLE' and r.pl_hsd = 'Trên 06T'
       when 'hsd_duoi_6t'  then r.nhom_trang_thai = 'USABLE' and r.pl_hsd = 'Dưới 06T'
       when 'dang_sd'      then r.nhom_trang_thai = 'USABLE'
+      when 'xau'          then r.nhom_trang_thai <> 'USABLE'
       when 'het_han'      then r.nhom_trang_thai = 'HET_HAN'
       when 'cho_huy'      then r.nhom_trang_thai = 'HUY'
       when 'loi_kt'       then r.nhom_trang_thai = 'LOI_KT'

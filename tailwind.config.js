@@ -15,6 +15,7 @@ export default {
         band: 'var(--band)',
         good: 'var(--good)',
         bad: 'var(--bad)',
+        warn: 'var(--warn-bg)',
       },
       fontFamily: { sans: ['system-ui', '-apple-system', '"Segoe UI"', 'sans-serif'] },
     },

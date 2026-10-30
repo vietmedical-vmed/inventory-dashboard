@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import ReportTable from './components/ReportTable'
+import CompactTable, { NGUONG } from './components/CompactTable'
 import DetailDrawer from './components/DetailDrawer'
 import { CanhBaoTonDong, XuHuongBu, nhanCacKy } from './components/TrendSections'
 import { fmtNgay, layDanhSachKhoi, layDanhSachSnapshot, taiBaoCao } from './lib/report'
@@ -31,6 +32,14 @@ function Kpi({ label, value, unit, sub, tone }) {
 
 const dauDelta = (v) => (v == null ? null : v > 0 ? 'bad' : 'good')
 
+const TABS = [
+  { key: 'tong_quan', label: 'Tổng quan' },
+  { key: 'hsd', label: 'Chất lượng HSD' },
+  { key: 'clc', label: 'Luân chuyển (CLC)' },
+  { key: 'so_sanh', label: 'So sánh kỳ trước' },
+  { key: 'excel', label: 'Bản Excel' },
+]
+
 export default function App() {
   const [snapshots, setSnapshots] = useState([])
   const [khois, setKhois] = useState([])
@@ -41,6 +50,10 @@ export default function App() {
   const [err, setErr] = useState(null)
   const [drill, setDrill] = useState(null)
   const [exporting, setExporting] = useState(false)
+  const [tab, setTab] = useState(() => {
+    const t = nho('inv.tab')
+    return TABS.some((x) => x.key === t) ? t : 'tong_quan'
+  })
 
   useEffect(() => {
     Promise.all([layDanhSachSnapshot(), layDanhSachKhoi()])
@@ -187,8 +200,40 @@ export default function App() {
             />
           </div>
 
-          <ReportTable model={view.model} periods={data.periods} onDrill={onDrill} />
-          <p className="text-xs text-muted">Bấm vào một ô số để xem chi tiết lô. Δ màu đỏ = tồn tăng, xanh = tồn giảm.</p>
+          <div>
+            <div className="mb-2 flex flex-wrap gap-1 border-b border-line" role="tablist">
+              {TABS.map((t) => (
+                <button
+                  key={t.key}
+                  role="tab"
+                  aria-selected={tab === t.key}
+                  onClick={() => {
+                    setTab(t.key)
+                    nho('inv.tab', t.key)
+                  }}
+                  className={`-mb-px border-b-2 px-3 py-2 text-sm ${tab === t.key ? 'border-head-2 font-semibold text-ink' : 'border-transparent text-ink2 hover:text-ink'}`}
+                >
+                  {t.label}
+                </button>
+              ))}
+            </div>
+            {tab === 'excel' ? (
+              <ReportTable model={view.model} periods={data.periods} onDrill={onDrill} />
+            ) : (
+              <CompactTable model={view.model} periods={data.periods} tab={tab} onDrill={onDrill} />
+            )}
+            <p className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted">
+              <span>Bấm vào ô số để xem chi tiết lô.</span>
+              {tab === 'so_sanh' ? (
+                <span><span className="text-bad">▲</span> tồn tăng · <span className="text-good">▼</span> tồn giảm</span>
+              ) : tab !== 'excel' ? (
+                <span className="flex items-center gap-1.5">
+                  <span className="inline-block h-3 w-3 rounded-sm bg-warn" /> vượt ngưỡng: hệ số tồn &gt; {NGUONG.he_so} tháng,
+                  CLC &gt; {fmtPct(NGUONG.pct_clc)}, hàng xấu &gt; {fmtPct(NGUONG.pct_xau)} tổng tồn
+                </span>
+              ) : null}
+            </p>
+          </div>
 
           <CanhBaoTonDong khoiTen={khoi} cot={view.canhBao} nhanKy={view.nhanKy} />
           <XuHuongBu khoiTen={khoi} model={view.model} periods={data.periods} nhanKy={view.nhanKy} />
