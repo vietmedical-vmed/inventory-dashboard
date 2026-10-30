@@ -37,7 +37,7 @@ export default function DetailDrawer({ drill, cycledate, khoi, tenNhom = (bu, n)
 
   return (
     <div className="fixed inset-0 z-40 flex justify-end bg-black/30" onClick={onClose}>
-      <div className="flex h-full w-full max-w-5xl flex-col bg-surface shadow-2xl" onClick={(e) => e.stopPropagation()}>
+      <div className="flex h-full w-full max-w-[min(1800px,96vw)] flex-col bg-surface shadow-2xl" onClick={(e) => e.stopPropagation()}>
         <div className="flex items-start justify-between gap-3 border-b border-line px-4 py-3">
           <div>
             <div className="text-xs text-muted">Chi tiết lô tồn kho</div>
@@ -84,11 +84,11 @@ export default function DetailDrawer({ drill, cycledate, khoi, tenNhom = (bu, n)
                 {loc.map((r, i) => (
                   <tr key={i} className="border-b border-line hover:bg-band">
                     <td className="px-2 py-1 font-mono">{r.ma_bravo}</td>
-                    <td className="max-w-[260px] truncate px-2 py-1" title={r.ten_mat_hang}>{r.ten_mat_hang}</td>
+                    <td className="min-w-[220px] px-2 py-1">{r.ten_mat_hang}</td>
                     <td className="whitespace-nowrap px-2 py-1">{tenNhom(r.bu, r.nhom_sp)}</td>
                     <td className="whitespace-nowrap px-2 py-1">{r.warehousecode}</td>
                     <td className="px-2 py-1">{r.so_lo}</td>
-                    <td className="max-w-[120px] truncate px-2 py-1" title={r.serialcode}>{r.serialcode}</td>
+                    <td className="max-w-[160px] break-all px-2 py-1">{r.serialcode}</td>
                     <td className="whitespace-nowrap px-2 py-1">{r.expirydate}</td>
                     <td className="num px-2 py-1 text-right">{fmtSo(r.so_luong)}</td>
                     <td className="num px-2 py-1 text-right">{fmtVnd(r.don_gia)}</td>

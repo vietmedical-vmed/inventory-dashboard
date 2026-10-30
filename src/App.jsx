@@ -20,6 +20,11 @@ const nho = (k, v) => {
 }
 
 // "NGOẠI KHOA" -> "Ngoại Khoa"
+// "NGOẠI KHOA" -> "Ngoại khoa" (viết hoa chữ đầu, dùng giữa câu)
+const tenKhoiCau = (s) => {
+  const t = s.toLocaleLowerCase('vi')
+  return t.charAt(0).toLocaleUpperCase('vi') + t.slice(1)
+}
 const tenKhoi = (s) => s.toLocaleLowerCase('vi').replace(/(^|\s)(\S)/g, (_, a, b) => a + b.toLocaleUpperCase('vi'))
 
 const TABS = [
@@ -288,7 +293,7 @@ export default function App() {
                   <Panel
                     key={g.bu}
                     title={g.ten}
-                    subtitle={`${g.nhom.length} nhóm SP · tổng tồn ${fmtTr(g.tong.tong_kd)} triệu VNĐ · ${fmtPct(k.tong_kd ? g.tong.tong_kd / k.tong_kd : null)} tồn khối`}
+                    subtitle={`Tồn ${fmtTr(g.tong.tong_kd)} triệu VNĐ ~ ${fmtPct(k.tong_kd ? g.tong.tong_kd / k.tong_kd : null)} tổng tồn khối ${tenKhoiCau(khoi)}`}
                     right={<span className="text-[11px] text-slate-400">Đơn vị: triệu VNĐ · bấm ô số để xem chi tiết lô</span>}
                   >
                     <ReportTable g={g} onDrill={onDrill} />
