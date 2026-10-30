@@ -24,8 +24,6 @@ const tenKhoi = (s) => s.toLocaleLowerCase('vi').replace(/(^|\s)(\S)/g, (_, a, b
 
 const TABS = [
   { key: 'excel', label: 'Tổng quan', sub: 'Tồn kho hàng đang kinh doanh theo BU / nhóm SP, bố cục như file báo cáo Excel' },
-  { key: 'hsd', label: 'Chất lượng HSD', sub: 'Phân loại theo hạn sử dụng và hàng hết date / chờ hủy / lỗi' },
-  { key: 'clc', label: 'Luân chuyển (CLC)', sub: 'Phân loại theo thời gian tồn (warnington) và hệ số tồn kho' },
   { key: 'so_sanh', label: 'So sánh kỳ trước', sub: 'Tổng tồn kho hàng đang KD qua các kỳ' },
   { key: 'kiem_tra', label: 'Kiểm tra dữ liệu', sub: 'Độ đầy đủ của snapshot, master, GV bán và chốt kỳ' },
 ]
@@ -304,16 +302,9 @@ export default function App() {
                 right={
                   <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-slate-400">
                     <span>Bấm ô số để xem chi tiết lô</span>
-                    {tab === 'so_sanh' ? (
-                      <span>
-                        <span className="text-red-600">▲</span> tồn tăng · <span className="text-emerald-700">▼</span> tồn giảm
-                      </span>
-                    ) : (
-                      <span className="flex items-center gap-1.5">
-                        <span className="inline-block h-2.5 w-2.5 rounded-sm border border-red-200 bg-red-50" />
-                        hệ số &gt; {NGUONG.he_so} tháng · CLC &gt; {fmtPct(NGUONG.pct_clc)} · hàng xấu &gt; {fmtPct(NGUONG.pct_xau)}
-                      </span>
-                    )}
+                    <span>
+                      <span className="text-red-600">▲</span> tồn tăng · <span className="text-emerald-700">▼</span> tồn giảm
+                    </span>
                   </div>
                 }
               >

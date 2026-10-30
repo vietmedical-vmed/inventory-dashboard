@@ -6,8 +6,6 @@ import { ChevronRight, TH } from './ui'
 // Ngưỡng tô cảnh báo
 export const NGUONG = { he_so: 6, pct_clc: 0.2, pct_xau: 0.03 }
 
-const chia = (a, b) => (a == null || !b ? null : a / b)
-
 /**
  * Cấu hình cột cho từng tab. Mỗi cột:
  *   val(r)  giá trị;  fmt  tr | pct | hs | delta | deltaTr | spark
@@ -19,28 +17,6 @@ export function cotTheoTab(tab, periods) {
   const p3 = periods[periods.length - 1]
   const p2 = periods[periods.length - 2]
   switch (tab) {
-    case 'hsd':
-      return [
-        { key: 'hsd_tren_12t', label: 'Trên 12T / Ko HSD', val: (r) => r.hsd_tren_12t, fmt: 'tr', drill: 'hsd_tren_12t', bar: true, share: true },
-        { key: 'hsd_6_12t', label: '6-12 tháng', val: (r) => r.hsd_6_12t, fmt: 'tr', drill: 'hsd_6_12t', bar: true, share: true },
-        { key: 'hsd_duoi_6t', label: 'Dưới 6 tháng', val: (r) => r.hsd_duoi_6t, fmt: 'tr', drill: 'hsd_duoi_6t', bar: true, share: true },
-        { key: 'dang_sd', label: 'Tổng đang SD', val: (r) => r.dang_sd, fmt: 'tr', drill: 'dang_sd', strong: true },
-        { key: 'het_han', label: 'Hết date, hỏng', val: (r) => r.het_han, fmt: 'tr', drill: 'het_han', bar: true, share: true },
-        { key: 'cho_huy', label: 'Đã duyệt chờ hủy', val: (r) => r.cho_huy, fmt: 'tr', drill: 'cho_huy', bar: true, share: true },
-        { key: 'loi_kt', label: 'Lỗi / KT', val: (r) => r.loi_kt, fmt: 'tr', drill: 'loi_kt', bar: true, share: true },
-        { key: 'tong_kd', label: 'Tổng tồn kho KD', val: (r) => r.tong_kd, fmt: 'tr', drill: null, strong: true },
-        { key: 'pct_xau', label: '% hàng xấu', val: (r) => chia(r.xau, r.tong_kd), fmt: 'pct', warn: (r) => chia(r.xau, r.tong_kd) > NGUONG.pct_xau },
-      ]
-    case 'clc':
-      return [
-        { key: 'clc_tren_24t', label: 'Tồn trên 24T', val: (r) => r.clc_tren_24t, fmt: 'tr', drill: 'clc_tren_24t', bar: true, share: true },
-        { key: 'clc_tren_12t', label: 'Tồn trên 12T', val: (r) => r.clc_tren_12t, fmt: 'tr', drill: 'clc_tren_12t', bar: true, share: true },
-        { key: 'clc_tren_06t', label: 'Tồn trên 06T', val: (r) => r.clc_tren_06t, fmt: 'tr', drill: 'clc_tren_06t', bar: true, share: true },
-        { key: 'clc', label: 'Tổng CLC', val: (r) => r.clc, fmt: 'tr', drill: 'clc', strong: true },
-        { key: 'pct_clc', label: '% CLC / tổng tồn', val: (r) => chia(r.clc, r.tong_kd), fmt: 'pct', warn: (r) => chia(r.clc, r.tong_kd) > NGUONG.pct_clc },
-        { key: 'gv', label: 'GV bán TB tháng', val: (r) => r.gv_ban_tb, fmt: 'tr' },
-        { key: 'he_so', label: 'Hệ số tồn kho (tháng)', val: (r) => r.he_so, fmt: 'hs', warn: (r) => r.he_so > NGUONG.he_so },
-      ]
     case 'so_sanh':
       return [
         ...periods.map((p, i) => ({ key: 'ls' + i, label: fmtNgay(p.ky), sub: p.nguon === 'Đã chốt' ? null : p.nguon === 'Chưa có số liệu' ? 'chưa có' : 'ước tính', val: (r) => r.lich_su[i], fmt: 'tr', muted: true })),
