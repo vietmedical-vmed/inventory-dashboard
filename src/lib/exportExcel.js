@@ -21,17 +21,16 @@ const XANH2 = 'FF4472C4'
 const NEN = 'FFEEF2F9'
 
 /** Xuất bảng báo cáo chính theo bố cục sheet Excel gốc (giá trị, không công thức). */
-export async function xuatExcel({ model, periods, cycledate, khoi, canhBao, nhanKy }) {
+export async function xuatExcel({ model, cycledate, khoi, canhBao, nhanKy }) {
   const ExcelJS = (await import('exceljs')).default
   const wb = new ExcelJS.Workbook()
   const ws = wb.addWorksheet('Bao_cao', { views: [{ state: 'frozen', xSplit: 2, ySplit: 5 }] })
-  const truoc = periods[periods.length - 1]
-  const nCol = 18
+  const nCol = 16
 
-  ws.mergeCells(1, 1, 1, 17)
+  ws.mergeCells(1, 1, 1, nCol)
   ws.getCell(1, 1).value = `BÁO CÁO TỒN KHO - KHỐI ${khoi} (tại ${fmtNgay(cycledate)})`
   ws.getCell(1, 1).font = { bold: true, size: 14 }
-  ws.mergeCells(2, 1, 2, 17)
+  ws.mergeCells(2, 1, 2, nCol)
   ws.getCell(2, 1).value =
     'Đơn vị: Triệu VNĐ. CHỈ TÍNH HÀNG ĐANG KINH DOANH (không bao gồm TSCĐ/CCDC và hàng ngừng kinh doanh).'
   ws.getCell(2, 1).font = { italic: true, color: { argb: 'FF595959' } }
@@ -40,12 +39,12 @@ export async function xuatExcel({ model, periods, cycledate, khoi, canhBao, nhan
     'Ngành hàng', 'Nhóm SP', 'Phân loại hàng theo HSD (Triệu VNĐ)', '', '', 'Tổng GT Hàng đang sử dụng (Triệu)',
     'Hàng hết date, hỏng (Triệu)', 'Hàng đã duyệt chờ hủy (Triệu)', 'Hàng lỗi/KT (Triệu)', 'Tổng tồn kho - Hàng đang KD (Triệu VNĐ)',
     'Phân loại theo mức độ luân chuyển (Triệu VNĐ)', '', '', 'Tổng giá trị CLC (Triệu VNĐ)', 'GV bán trung bình tháng gần nhất (Triệu VNĐ)',
-    'Hệ số tồn kho TB', `Giá trị kỳ trước (${fmtNgay(truoc.ky)}, Triệu VNĐ)`, '% Tăng/giảm so kỳ trước',
+    'Hệ số tồn kho TB',
   ]
-  const h2 = ['', '', ...COT_HSD.map((c) => c.label), '', '', '', '', '', ...COT_CLC.map((c) => c.label), '', '', '', '', '']
+  const h2 = ['', '', ...COT_HSD.map((c) => c.label), '', '', '', '', '', ...COT_CLC.map((c) => c.label), '', '', '']
   ws.getRow(4).values = h1
   ws.getRow(5).values = h2
-  for (const c of [1, 2, 6, 7, 8, 9, 10, 14, 15, 16, 17, 18]) ws.mergeCells(4, c, 5, c)
+  for (const c of [1, 2, 6, 7, 8, 9, 10, 14, 15, 16]) ws.mergeCells(4, c, 5, c)
   ws.mergeCells(4, 3, 4, 5)
   ws.mergeCells(4, 11, 4, 13)
   for (const r of [4, 5]) {
@@ -61,13 +60,12 @@ export async function xuatExcel({ model, periods, cycledate, khoi, canhBao, nhan
   const giaTri = (r) => [
     r.hsd_tren_12t, r.hsd_6_12t, r.hsd_duoi_6t, r.dang_sd, r.het_han, r.cho_huy, r.loi_kt, r.tong_kd,
     r.clc_tren_24t, r.clc_tren_12t, r.clc_tren_06t, r.clc, r.gv_ban_tb ?? null, r.he_so ?? null,
-    r.ky_truoc ?? null, r.pct_ky_truoc ?? null,
   ]
   const dinhDang = (row, kieu) => {
     row.eachCell({ includeEmpty: true }, (cell, c) => {
       if (c > nCol) return
       cell.border = { top: { style: 'thin' }, left: { style: 'thin' }, bottom: { style: 'thin' }, right: { style: 'thin' } }
-      if (c >= 3) cell.numFmt = kieu === 'pct' ? '0.0%' : c === 16 ? '0.00' : c === 18 ? '+0.0%;-0.0%' : '#,##0'
+      if (c >= 3) cell.numFmt = kieu === 'pct' ? '0.0%' : c === 16 ? '0.00' : '#,##0'
       if (kieu === 'tong') {
         cell.font = { bold: true }
         cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: NEN } }

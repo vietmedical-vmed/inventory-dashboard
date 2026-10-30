@@ -24,7 +24,7 @@ const tenKhoi = (s) => s.toLocaleLowerCase('vi').replace(/(^|\s)(\S)/g, (_, a, b
 
 const TABS = [
   { key: 'excel', label: 'Tổng quan', sub: 'Tồn kho hàng đang kinh doanh theo BU / nhóm SP, bố cục như file báo cáo Excel' },
-  { key: 'so_sanh', label: 'So sánh kỳ trước', sub: 'Tổng tồn kho hàng đang KD qua các kỳ' },
+  { key: 'so_sanh', label: 'Xu hướng tồn kho', sub: 'Tổng tồn kho hàng đang KD qua các kỳ' },
   { key: 'kiem_tra', label: 'Kiểm tra dữ liệu', sub: 'Độ đầy đủ của snapshot, master, GV bán và chốt kỳ' },
 ]
 
@@ -291,7 +291,7 @@ export default function App() {
                     subtitle={`${g.nhom.length} nhóm SP · tổng tồn ${fmtTr(g.tong.tong_kd)} triệu VNĐ · ${fmtPct(k.tong_kd ? g.tong.tong_kd / k.tong_kd : null)} tồn khối`}
                     right={<span className="text-[11px] text-slate-400">Đơn vị: triệu VNĐ · bấm ô số để xem chi tiết lô</span>}
                   >
-                    <ReportTable g={g} periods={data.periods} onDrill={onDrill} />
+                    <ReportTable g={g} onDrill={onDrill} />
                   </Panel>
                 ))}
               </div>
@@ -312,7 +312,7 @@ export default function App() {
               </Panel>
             )}
 
-            {tab !== 'kiem_tra' && (
+            {tab === 'so_sanh' && (
               <div className="grid gap-4 xl:grid-cols-2">
                 <CanhBaoTonDong khoiTen={tenKhoi(khoi)} cot={view.canhBao} nhanKy={view.nhanKy} />
                 <XuHuongBu khoiTen={tenKhoi(khoi)} model={view.model} periods={data.periods} nhanKy={view.nhanKy} />

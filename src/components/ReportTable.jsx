@@ -1,4 +1,4 @@
-import { COT_CLC, COT_HSD, COT_XAU, fmtNgay } from '../lib/report'
+import { COT_CLC, COT_HSD, COT_XAU } from '../lib/report'
 import { fmtHs, fmtPct, fmtTr } from '../lib/format'
 
 // Cột giá trị kỳ này (có drill-down), theo thứ tự trong file Excel
@@ -10,17 +10,12 @@ const COT_SO = [
   ...COT_CLC,
   { key: 'clc', label: 'Tổng giá trị CLC', tong: true },
 ]
-// Cột sau phần giá trị: GV bán TB, hệ số, kỳ trước, % so kỳ trước
-const SO_COT_SAU = 4
+// Cột sau phần giá trị: GV bán TB, hệ số tồn kho
+const SO_COT_SAU = 2
 
 const th = 'border border-white/30 px-2 py-1.5 font-semibold text-white text-[11px] leading-tight align-middle'
 const tdl = 'border border-slate-200 px-3 py-1.5 whitespace-nowrap text-left'
 const td = 'border border-slate-200 px-2 py-1.5 text-right num whitespace-nowrap'
-
-function Delta({ v }) {
-  if (v == null || !Number.isFinite(v)) return null
-  return <span className={v > 0 ? 'text-red-600' : v < 0 ? 'text-emerald-700' : ''}>{fmtPct(v, true)}</span>
-}
 
 function DongSo({ r, drill, onDrill }) {
   return (
@@ -41,15 +36,12 @@ function DongSo({ r, drill, onDrill }) {
       })}
       <td className={td}>{fmtTr(r.gv_ban_tb)}</td>
       <td className={td}>{fmtHs(r.he_so)}</td>
-      <td className={td}>{fmtTr(r.ky_truoc)}</td>
-      <td className={td}><Delta v={r.pct_ky_truoc} /></td>
     </>
   )
 }
 
 /** Bảng bố cục Excel cho 1 BU: các nhóm SP + Tổng + Tỷ trọng. */
-export default function ReportTable({ g, periods, onDrill }) {
-  const truoc = periods[periods.length - 1]
+export default function ReportTable({ g, onDrill }) {
   const t = g.tong
   return (
     <div className="scroll-shadow overflow-x-auto">
@@ -67,8 +59,6 @@ export default function ReportTable({ g, periods, onDrill }) {
             <th rowSpan={2} className={`${th} w-20`}>Tổng giá trị CLC</th>
             <th rowSpan={2} className={`${th} w-24`}>GV bán TB tháng gần nhất</th>
             <th rowSpan={2} className={`${th} w-16`}>Hệ số tồn kho TB</th>
-            <th rowSpan={2} className={`${th} w-24`}>Giá trị kỳ trước ({truoc && fmtNgay(truoc.ky)})</th>
-            <th rowSpan={2} className={`${th} w-20`}>% tăng/giảm so kỳ trước</th>
           </tr>
           <tr className="bg-head-2">
             {COT_HSD.map((c) => <th key={c.key} className={th}>{c.label}</th>)}
