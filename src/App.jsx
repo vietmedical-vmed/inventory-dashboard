@@ -4,6 +4,7 @@ import CompactTable, { NGUONG } from './components/CompactTable'
 import DetailDrawer from './components/DetailDrawer'
 import DataCheck from './components/DataCheck'
 import { CanhBaoTonDong, XuHuongBu, nhanCacKy } from './components/TrendSections'
+import { AlertTriangle, Download, FilterSelect, LoadingBlock, Panel, RefreshCw, RefreshingBar, Tabs } from './components/ui'
 import { fmtNgay, layDanhSachKhoi, layDanhSachSnapshot, taiBaoCao } from './lib/report'
 import { canhBaoTonDong, dungMoHinh } from './lib/model'
 import { fmtHs, fmtPct, fmtSo, fmtTy } from './lib/format'
@@ -18,29 +19,86 @@ const nho = (k, v) => {
   }
 }
 
-function Kpi({ label, value, unit, sub, tone }) {
+const TABS = [
+  { key: 'tong_quan', label: 'Tổng quan', sub: 'Tồn kho hàng đang kinh doanh theo BU / nhóm SP' },
+  { key: 'hsd', label: 'Chất lượng HSD', sub: 'Phân loại theo hạn sử dụng và hàng hết date / chờ hủy / lỗi' },
+  { key: 'clc', label: 'Luân chuyển (CLC)', sub: 'Phân loại theo thời gian tồn (warnington) và hệ số tồn kho' },
+  { key: 'so_sanh', label: 'So sánh kỳ trước', sub: 'Tổng tồn kho hàng đang KD qua các kỳ' },
+  { key: 'excel', label: 'Bản Excel', sub: 'Bố cục đầy đủ như file báo cáo Excel' },
+  { key: 'kiem_tra', label: 'Kiểm tra dữ liệu', sub: 'Độ đầy đủ của snapshot, master, GV bán và chốt kỳ' },
+]
+
+// Thành phần tổng tồn: đang SD + hết date + chờ hủy + lỗi KT
+const PHAN = [
+  { key: 'dang_sd', label: 'Đang sử dụng', color: 'var(--s1)' },
+  { key: 'het_han', label: 'Hết date, hỏng', color: 'var(--st-critical)' },
+  { key: 'cho_huy', label: 'Chờ hủy', color: 'var(--st-serious)' },
+  { key: 'loi_kt', label: 'Lỗi / KT', color: 'var(--st-warning)' },
+]
+
+function DeltaText({ v, so }) {
+  if (v == null || !Number.isFinite(v)) return null
   return (
-    <div className="rounded-lg border border-line bg-surface px-4 py-3">
-      <div className="text-xs text-ink2">{label}</div>
-      <div className="mt-1 flex items-baseline gap-1">
-        <span className="text-2xl font-bold">{value}</span>
-        {unit && <span className="text-xs text-muted">{unit}</span>}
+    <span className={v > 0 ? 'text-red-600' : 'text-emerald-700'}>
+      {v > 0 ? '▲' : '▼'} {fmtPct(Math.abs(v))} <span className="text-slate-400">so {so}</span>
+    </span>
+  )
+}
+
+function TongCard({ k, periods }) {
+  const tong = k.tong_kd || 0
+  return (
+    <div className="rounded-xl border border-slate-200 bg-white p-3.5">
+      <div className="mb-2 flex flex-wrap items-baseline justify-between gap-x-3 text-[11px] tracking-wide text-slate-400">
+        <span>Tổng tồn kho - hàng đang kinh doanh</span>
+        <span className="text-[12px]">
+          <DeltaText v={k.pct_ky_truoc} so={fmtNgay(periods.at(-1).ky)} />
+        </span>
       </div>
-      {sub && <div className={`mt-0.5 text-xs ${tone === 'bad' ? 'text-bad' : tone === 'good' ? 'text-good' : 'text-muted'}`}>{sub}</div>}
+      <div className="mb-1.5 flex items-baseline justify-between">
+        <span className="text-[13px] font-semibold text-slate-800">Giá trị tồn</span>
+        <span className="num text-[22px] font-bold text-blue-600">
+          {fmtTy(tong)} <span className="text-[13px] font-semibold text-slate-400">tỷ</span>
+        </span>
+      </div>
+      <div className="mb-1.5 flex h-3.5 gap-px overflow-hidden rounded bg-slate-100">
+        {tong > 0 &&
+          PHAN.map((p) =>
+            k[p.key] > 0 ? (
+              <div
+                key={p.key}
+                style={{ flexGrow: k[p.key], flexBasis: 0, background: p.color }}
+                title={`${p.label}: ${fmtTy(k[p.key])} tỷ (${fmtPct(k[p.key] / tong)})`}
+              />
+            ) : null,
+          )}
+      </div>
+      <div className="flex flex-wrap gap-3 text-[11px] text-slate-500">
+        {PHAN.map((p) => (
+          <span key={p.key} className="flex items-center gap-1">
+            <span className="h-2.5 w-2.5 rounded-sm" style={{ background: p.color }} aria-hidden />
+            {p.label} <span className="num text-slate-400">{tong ? fmtPct(k[p.key] / tong) : ''}</span>
+          </span>
+        ))}
+      </div>
     </div>
   )
 }
 
-const dauDelta = (v) => (v == null ? null : v > 0 ? 'bad' : 'good')
-
-const TABS = [
-  { key: 'tong_quan', label: 'Tổng quan' },
-  { key: 'hsd', label: 'Chất lượng HSD' },
-  { key: 'clc', label: 'Luân chuyển (CLC)' },
-  { key: 'so_sanh', label: 'So sánh kỳ trước' },
-  { key: 'excel', label: 'Bản Excel' },
-  { key: 'kiem_tra', label: 'Kiểm tra dữ liệu' },
-]
+function StatCard({ label, swatch, value, unit, sub, warn }) {
+  return (
+    <div className={`rounded-xl border bg-white p-3.5 ${warn ? 'border-red-200' : 'border-slate-200'}`}>
+      <div className="mb-2 flex items-center gap-1.5 text-[11px] tracking-wide text-slate-400">
+        {swatch && <span className="h-2 w-2 rounded-sm" style={{ background: swatch }} aria-hidden />}
+        {label}
+      </div>
+      <div className={`num text-[20px] font-bold ${warn ? 'text-red-600' : 'text-slate-800'}`}>
+        {value} {unit && <span className="text-[12px] font-semibold text-slate-400">{unit}</span>}
+      </div>
+      {sub && <div className="mt-0.5 text-[11px] text-slate-400">{sub}</div>}
+    </div>
+  )
+}
 
 export default function App() {
   const [snapshots, setSnapshots] = useState([])
@@ -52,6 +110,7 @@ export default function App() {
   const [err, setErr] = useState(null)
   const [drill, setDrill] = useState(null)
   const [exporting, setExporting] = useState(false)
+  const [nonce, setNonce] = useState(0)
   const [tab, setTab] = useState(() => {
     const t = nho('inv.tab')
     return TABS.some((x) => x.key === t) ? t : 'tong_quan'
@@ -62,12 +121,11 @@ export default function App() {
       .then(([s, k]) => {
         setSnapshots(s)
         setKhois(k)
-        const savedK = nho('inv.khoi')
-        setKhoi(k.includes(savedK) ? savedK : k[0] || null)
-        setCycledate(s[0] || null)
+        setKhoi((cur) => (k.includes(cur) ? cur : k.includes(nho('inv.khoi')) ? nho('inv.khoi') : k[0] || null))
+        setCycledate((cur) => (s.includes(cur) ? cur : s[0] || null))
       })
       .catch((e) => setErr(e.message))
-  }, [])
+  }, [nonce])
 
   useEffect(() => {
     if (!cycledate || !khoi) return
@@ -95,163 +153,185 @@ export default function App() {
   const tdNay = cb?.[cb.length - 1]
   const tdTruoc = cb?.[cb.length - 2]
   const info = data?.info
+  const tabInfo = TABS.find((t) => t.key === tab)
+  const ghiChu = data
+    ? [
+        ...(info && Number(info.co_warnington) === 0
+          ? [`Snapshot ${fmtNgay(cycledate)} chưa có warnington — luân chuyển tính toàn bộ là "dưới 6T", CLC = 0.`]
+          : []),
+        ...data.periods.filter((p) => p.nguon !== 'Đã chốt').map((p) => `Kỳ ${fmtNgay(p.ky)}: ${p.nguon.toLowerCase()}.`),
+      ]
+    : []
 
   return (
-    <div className="mx-auto max-w-[1800px] px-4 py-5 sm:px-6">
-      <header className="mb-4 flex flex-wrap items-end justify-between gap-3">
-        <div>
-          <h1 className="text-xl font-bold">
-            BÁO CÁO TỒN KHO {khoi && `- KHỐI ${khoi}`} {cycledate && <span className="font-normal text-ink2">(tại {fmtNgay(cycledate)})</span>}
-          </h1>
-          <p className="text-xs text-ink2">
-            Đơn vị: Triệu VNĐ. Chỉ tính hàng đang kinh doanh (không gồm TSCĐ/CCDC và hàng ngừng kinh doanh).
-          </p>
+    <div className="min-h-screen">
+      <header className="sticky top-0 z-30 border-b border-slate-200 bg-white">
+        <div className="flex flex-wrap items-center justify-between gap-4 px-6 py-3">
+          <div className="flex items-center gap-3">
+            <div className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-blue-500 text-sm font-bold text-white">TK</div>
+            <div className="leading-tight">
+              <div className="text-base font-bold text-slate-900 md:text-lg">BÁO CÁO TỒN KHO</div>
+              <div className="mt-0.5 text-xs text-slate-500">
+                {khoi ? `Khối ${khoi}` : '…'}
+                {cycledate && ` · tại ${fmtNgay(cycledate)}`} · Đơn vị: triệu VNĐ, chỉ hàng đang kinh doanh
+              </div>
+            </div>
+          </div>
+          <div className="flex flex-col items-end gap-2">
+            <div className="text-right text-[9px] italic text-slate-400">
+              Designed and developed by <span className="font-semibold not-italic text-slate-500">Do Hoang Giang</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setNonce((n) => n + 1)}
+                className="flex items-center gap-1.5 rounded-md bg-blue-600 px-4 py-1.5 text-[13px] font-semibold text-white hover:bg-blue-700"
+              >
+                <RefreshCw size={14} />
+                Reload
+              </button>
+              <button
+                type="button"
+                disabled={!view || exporting}
+                onClick={async () => {
+                  setExporting(true)
+                  try {
+                    await xuatExcel({ ...view, periods: data.periods, cycledate, khoi })
+                  } finally {
+                    setExporting(false)
+                  }
+                }}
+                className="flex items-center gap-1.5 rounded-md border border-slate-200 bg-white px-4 py-1.5 text-[13px] font-semibold text-slate-700 hover:border-slate-300 hover:bg-slate-50 disabled:opacity-50"
+              >
+                <Download size={14} />
+                {exporting ? 'Đang xuất…' : 'Xuất Excel'}
+              </button>
+            </div>
+          </div>
         </div>
-        <div className="flex flex-wrap items-center gap-2 text-sm">
-          <label className="flex items-center gap-1.5">
-            <span className="text-ink2">Khối</span>
-            <select
-              className="rounded border border-line bg-surface px-2 py-1"
-              value={khoi || ''}
-              onChange={(e) => {
-                setKhoi(e.target.value)
-                nho('inv.khoi', e.target.value)
-              }}
-            >
-              {khois.map((x) => <option key={x}>{x}</option>)}
-            </select>
-          </label>
-          <label className="flex items-center gap-1.5">
-            <span className="text-ink2">Snapshot</span>
-            <select className="rounded border border-line bg-surface px-2 py-1" value={cycledate || ''} onChange={(e) => setCycledate(e.target.value)}>
-              {snapshots.map((s) => <option key={s} value={s}>{fmtNgay(s)}</option>)}
-            </select>
-          </label>
-          <button
-            className="rounded bg-head-2 px-3 py-1 font-medium text-white hover:bg-head disabled:opacity-50"
-            disabled={!view || exporting}
-            onClick={async () => {
-              setExporting(true)
-              try {
-                await xuatExcel({ ...view, periods: data.periods, cycledate, khoi })
-              } finally {
-                setExporting(false)
-              }
+
+        <div className="flex flex-wrap items-center gap-2.5 border-t border-slate-100 px-6 py-2">
+          <span className="pl-1 text-[11px] font-semibold uppercase tracking-wide text-slate-500">Lọc</span>
+          <FilterSelect
+            label="Khối"
+            value={khoi}
+            options={khois.map((x) => ({ value: x, label: x }))}
+            onChange={(v) => {
+              setKhoi(v)
+              nho('inv.khoi', v)
             }}
-          >
-            {exporting ? 'Đang xuất…' : 'Xuất Excel'}
-          </button>
+          />
+          <FilterSelect
+            label="Snapshot"
+            value={cycledate}
+            options={snapshots.map((s, i) => ({ value: s, label: fmtNgay(s), hint: i === 0 ? 'mới nhất' : null }))}
+            onChange={setCycledate}
+          />
         </div>
+
+        <Tabs
+          tabs={TABS}
+          value={tab}
+          onChange={(t) => {
+            setTab(t)
+            nho('inv.tab', t)
+          }}
+        />
       </header>
 
-      {err && <div className="mb-4 rounded border border-bad bg-surface px-3 py-2 text-sm text-bad">{err}</div>}
+      <main className="space-y-4 px-6 py-4">
+        {err && <LoadingBlock error={err} />}
+        {!view && !err && <LoadingBlock />}
+        {view && loading && <RefreshingBar />}
 
-      {info && (Number(info.co_warnington) === 0 || data.periods.some((p) => p.nguon !== 'Đã chốt')) && (
-        <div className="mb-4 space-y-1 rounded border border-line bg-surface px-3 py-2 text-xs text-ink2">
-          {Number(info.co_warnington) === 0 && (
-            <div>
-              <b className="text-ink">Lưu ý:</b> snapshot {fmtNgay(cycledate)} chưa có cột <code>warnington</code> (cảnh báo thời gian tồn) —
-              phân loại luân chuyển/CLC đang tính toàn bộ là "Dưới 06T" nên CLC = 0.
-            </div>
-          )}
-          {data.periods
-            .filter((p) => p.nguon !== 'Đã chốt')
-            .map((p) => (
-              <div key={p.ky}>
-                Kỳ {fmtNgay(p.ky)}: {p.nguon.toLowerCase()}.
-              </div>
-            ))}
-        </div>
-      )}
-
-      {loading && !view && <div className="py-20 text-center text-muted">Đang tải dữ liệu…</div>}
-
-      {view && (
-        <div className={`space-y-4 ${loading ? 'opacity-60' : ''}`}>
-          <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-6">
-            <Kpi
-              label="Tổng tồn kho - hàng đang KD"
-              value={fmtTy(k.tong_kd)}
-              unit="tỷ"
-              sub={k.pct_ky_truoc != null && `${fmtPct(k.pct_ky_truoc, true)} so ${fmtNgay(data.periods.at(-1).ky)}`}
-              tone={dauDelta(k.pct_ky_truoc)}
-            />
-            <Kpi label="Hàng đang sử dụng" value={fmtTy(k.dang_sd)} unit="tỷ" sub={k.tong_kd ? `${fmtPct(k.dang_sd / k.tong_kd)} tổng tồn` : null} />
-            <Kpi
-              label="Hết date + chờ hủy + lỗi/KT"
-              value={fmtTy(k.xau)}
-              unit="tỷ"
-              sub={k.pct_xau_2t != null ? `${fmtPct(k.pct_xau_2t, true)} so ${fmtNgay(data.periods.at(-2).ky)}` : k.tong_kd ? `${fmtPct(k.xau / k.tong_kd)} tổng tồn` : null}
-              tone={dauDelta(k.pct_xau_2t)}
-            />
-            <Kpi label="Chậm luân chuyển (CLC)" value={fmtTy(k.clc)} unit="tỷ" sub={k.tong_kd ? `${fmtPct(k.clc / k.tong_kd)} tổng tồn` : null} />
-            <Kpi
-              label="% tồn đọng / tổng tồn"
-              value={tdNay?.ton_dong != null && tdNay.tong_kd ? fmtPct(tdNay.ton_dong / tdNay.tong_kd) : '–'}
-              sub={
-                tdTruoc?.ton_dong != null && tdTruoc.tong_kd
-                  ? `kỳ trước ${fmtPct(tdTruoc.ton_dong / tdTruoc.tong_kd)}`
-                  : null
-              }
-            />
-            <Kpi
-              label="Hệ số tồn kho TB"
-              value={fmtHs(k.he_so) || '–'}
-              unit="tháng"
-              sub={info ? `${fmtSo(info.so_dong)} dòng snapshot` : null}
-            />
+        {view && ghiChu.length > 0 && (
+          <div className="flex items-start gap-2 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-[12px] text-amber-800">
+            <AlertTriangle size={14} className="mt-0.5 shrink-0" />
+            <div className="space-y-0.5">{ghiChu.map((g) => <div key={g}>{g}</div>)}</div>
           </div>
+        )}
 
-          <div>
-            <div className="mb-2 flex flex-wrap gap-1 border-b border-line" role="tablist">
-              {TABS.map((t) => (
-                <button
-                  key={t.key}
-                  role="tab"
-                  aria-selected={tab === t.key}
-                  onClick={() => {
-                    setTab(t.key)
-                    nho('inv.tab', t.key)
-                  }}
-                  className={`-mb-px border-b-2 px-3 py-2 text-sm ${tab === t.key ? 'border-head-2 font-semibold text-ink' : 'border-transparent text-ink2 hover:text-ink'}`}
-                >
-                  {t.label}
-                </button>
-              ))}
+        {view && (
+          <>
+            <div className="grid gap-3 lg:grid-cols-[minmax(0,1.4fr)_minmax(0,3fr)]">
+              <TongCard k={k} periods={data.periods} />
+              <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+                <StatCard
+                  label="Hàng xấu (hết date + hủy + lỗi)"
+                  swatch="var(--st-critical)"
+                  value={fmtTy(k.xau)}
+                  unit="tỷ"
+                  sub={k.tong_kd ? `${fmtPct(k.xau / k.tong_kd)} tổng tồn` : null}
+                  warn={k.tong_kd && k.xau / k.tong_kd > NGUONG.pct_xau}
+                />
+                <StatCard
+                  label="Chậm luân chuyển (CLC)"
+                  swatch="var(--st-clc)"
+                  value={fmtTy(k.clc)}
+                  unit="tỷ"
+                  sub={k.tong_kd ? `${fmtPct(k.clc / k.tong_kd)} tổng tồn` : null}
+                  warn={k.tong_kd && k.clc / k.tong_kd > NGUONG.pct_clc}
+                />
+                <StatCard
+                  label="% tồn đọng / tổng tồn"
+                  swatch="var(--st-warning)"
+                  value={tdNay?.ton_dong != null && tdNay.tong_kd ? fmtPct(tdNay.ton_dong / tdNay.tong_kd) : '–'}
+                  sub={tdTruoc?.ton_dong != null && tdTruoc.tong_kd ? `kỳ trước ${fmtPct(tdTruoc.ton_dong / tdTruoc.tong_kd)}` : 'HH + chờ hủy + lỗi + CLC'}
+                />
+                <StatCard
+                  label="Hệ số tồn kho TB"
+                  swatch="var(--s1)"
+                  value={fmtHs(k.he_so) || '–'}
+                  unit="tháng"
+                  sub={info ? `${fmtSo(info.so_dong)} dòng snapshot` : null}
+                  warn={k.he_so > NGUONG.he_so}
+                />
+              </div>
             </div>
+
             {tab === 'kiem_tra' ? (
               <DataCheck cycledate={cycledate} khoi={khoi} />
-            ) : tab === 'excel' ? (
-              <ReportTable model={view.model} periods={data.periods} onDrill={onDrill} />
             ) : (
-              <CompactTable model={view.model} periods={data.periods} tab={tab} onDrill={onDrill} />
+              <Panel
+                title={tabInfo.label}
+                subtitle={tabInfo.sub}
+                right={
+                  <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-slate-400">
+                    <span>Bấm ô số để xem chi tiết lô</span>
+                    {tab === 'so_sanh' ? (
+                      <span>
+                        <span className="text-red-600">▲</span> tồn tăng · <span className="text-emerald-700">▼</span> tồn giảm
+                      </span>
+                    ) : tab !== 'excel' ? (
+                      <span className="flex items-center gap-1.5">
+                        <span className="inline-block h-2.5 w-2.5 rounded-sm border border-red-200 bg-red-50" />
+                        hệ số &gt; {NGUONG.he_so} tháng · CLC &gt; {fmtPct(NGUONG.pct_clc)} · hàng xấu &gt; {fmtPct(NGUONG.pct_xau)}
+                      </span>
+                    ) : null}
+                  </div>
+                }
+              >
+                {tab === 'excel' ? (
+                  <div className="p-3">
+                    <ReportTable model={view.model} periods={data.periods} onDrill={onDrill} />
+                  </div>
+                ) : (
+                  <CompactTable model={view.model} periods={data.periods} tab={tab} onDrill={onDrill} />
+                )}
+              </Panel>
             )}
-            {tab !== 'kiem_tra' && (
-              <p className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted">
-                <span>Bấm vào ô số để xem chi tiết lô.</span>
-                {tab === 'so_sanh' ? (
-                  <span><span className="text-bad">▲</span> tồn tăng · <span className="text-good">▼</span> tồn giảm</span>
-                ) : tab !== 'excel' ? (
-                  <span className="flex items-center gap-1.5">
-                    <span className="inline-block h-3 w-3 rounded-sm bg-warn" /> vượt ngưỡng: hệ số tồn &gt; {NGUONG.he_so} tháng,
-                    CLC &gt; {fmtPct(NGUONG.pct_clc)}, hàng xấu &gt; {fmtPct(NGUONG.pct_xau)} tổng tồn
-                  </span>
-                ) : null}
-              </p>
-            )}
-          </div>
 
-          {tab !== 'kiem_tra' && (
-            <>
-              <CanhBaoTonDong khoiTen={khoi} cot={view.canhBao} nhanKy={view.nhanKy} />
-              <XuHuongBu khoiTen={khoi} model={view.model} periods={data.periods} nhanKy={view.nhanKy} />
-            </>
-          )}
-        </div>
-      )}
+            {tab !== 'kiem_tra' && (
+              <div className="grid gap-4 xl:grid-cols-2">
+                <CanhBaoTonDong khoiTen={khoi} cot={view.canhBao} nhanKy={view.nhanKy} />
+                <XuHuongBu khoiTen={khoi} model={view.model} periods={data.periods} nhanKy={view.nhanKy} />
+              </div>
+            )}
+          </>
+        )}
+      </main>
 
       {drill && <DetailDrawer drill={drill} cycledate={cycledate} khoi={khoi} onClose={closeDrill} />}
     </div>
   )
 }
-

@@ -2,20 +2,21 @@ import { useEffect, useMemo, useState } from 'react'
 import { fmtNgay, kyTruoc, layKiemTra } from '../lib/report'
 import { fmtSo } from '../lib/format'
 import { taiCsv } from '../lib/exportExcel'
+import { Badge, ChevronRight, Download, LoadingBlock, TH } from './ui'
 
 function TrangThai({ ok, title, children }) {
   return (
-    <div className={`rounded-lg border bg-surface px-4 py-3 ${ok ? 'border-line' : 'border-bad'}`}>
-      <div className="flex items-center gap-2 text-sm font-semibold">
+    <div className={`rounded-xl border bg-white p-3.5 ${ok ? 'border-slate-200' : 'border-red-200'}`}>
+      <div className="flex items-center gap-2 text-[13px] font-semibold text-slate-800">
         <span
-          className={`inline-flex h-5 w-5 items-center justify-center rounded-full text-xs text-white ${ok ? 'bg-good' : 'bg-bad'}`}
+          className={`inline-flex h-5 w-5 items-center justify-center rounded-full text-[11px] text-white ${ok ? 'bg-emerald-600' : 'bg-red-500'}`}
           aria-label={ok ? 'Ổn' : 'Cần xử lý'}
         >
           {ok ? '✓' : '!'}
         </span>
         {title}
       </div>
-      <div className="mt-1.5 space-y-0.5 text-xs text-ink2">{children}</div>
+      <div className="mt-2 space-y-0.5 text-[12px] text-slate-500">{children}</div>
     </div>
   )
 }
@@ -23,35 +24,35 @@ function TrangThai({ ok, title, children }) {
 function Muc({ title, count, ok, children, actions }) {
   const [open, setOpen] = useState(!ok)
   return (
-    <section className="rounded-lg border border-line bg-surface">
-      <div className="flex flex-wrap items-center justify-between gap-2 px-4 py-3">
-        <button className="flex items-center gap-2 text-sm font-semibold" onClick={() => setOpen(!open)} aria-expanded={open}>
-          <span className={`inline-block w-3 text-muted transition-transform ${open ? 'rotate-90' : ''}`}>▶</span>
+    <section className="overflow-hidden rounded-lg border border-slate-200 bg-white">
+      <div className="flex flex-wrap items-center justify-between gap-2 px-4 py-2.5">
+        <button className="flex items-center gap-2 text-[13px] font-semibold text-slate-800 hover:text-blue-600" onClick={() => setOpen(!open)} aria-expanded={open}>
+          <ChevronRight size={14} className={`text-slate-400 transition-transform ${open ? 'rotate-90' : ''}`} />
           {title}
-          <span className={`rounded-full px-2 py-0.5 text-xs ${ok ? 'bg-band text-ink2' : 'bg-warn text-bad'}`}>{fmtSo(count)}</span>
+          <Badge tone={ok ? 'grey' : 'red'}>{fmtSo(count)}</Badge>
         </button>
         {open && actions}
       </div>
-      {open && <div className="border-t border-line">{children}</div>}
+      {open && <div className="border-t border-slate-100">{children}</div>}
     </section>
   )
 }
 
 function Bang({ cols, rows, empty = 'Không có' }) {
-  if (!rows.length) return <div className="px-4 py-3 text-sm text-good">✓ {empty}</div>
+  if (!rows.length) return <div className="px-4 py-4 text-center text-[13px] text-slate-400">{empty}</div>
   return (
-    <div className="max-h-[420px] overflow-auto">
+    <div className="scroll-shadow max-h-[420px] overflow-auto">
       <table className="min-w-full text-[13px]">
-        <thead className="sticky top-0 bg-band text-left text-xs text-ink2">
+        <thead className="sticky top-0 bg-slate-50 text-left">
           <tr>
             {cols.map((c) => (
-              <th key={c.key} className={`whitespace-nowrap px-3 py-2 font-semibold ${c.num ? 'text-right' : ''}`}>{c.label}</th>
+              <th key={c.key} className={`${TH} whitespace-nowrap ${c.num ? 'text-right' : ''}`}>{c.label}</th>
             ))}
           </tr>
         </thead>
         <tbody>
           {rows.map((r, i) => (
-            <tr key={i} className={`border-t border-line ${r._hl ? 'bg-warn' : ''}`}>
+            <tr key={i} className={`text-slate-700 hover:bg-blue-50/40 ${r._hl ? 'bg-amber-50' : i % 2 ? 'bg-slate-50/50' : 'bg-white'}`}>
               {cols.map((c) => (
                 <td key={c.key} className={`px-3 py-1.5 ${c.num ? 'num text-right' : ''} ${c.wrap ? 'max-w-[360px]' : 'whitespace-nowrap'}`}>
                   {c.render ? c.render(r) : c.num ? fmtSo(r[c.key]) : r[c.key]}
@@ -93,8 +94,7 @@ export default function DataCheck({ cycledate, khoi }) {
     [d, plKho],
   )
 
-  if (err) return <div className="rounded border border-bad bg-surface px-3 py-2 text-sm text-bad">{err}</div>
-  if (!d) return <div className="py-10 text-center text-muted">Đang kiểm tra dữ liệu…</div>
+  if (err || !d) return <LoadingBlock error={err} />
 
   const kyCanChot = kyTruoc(cycledate, 1)[0]
   const daChot = d.chot_ky.find((c) => c.ky === kyCanChot)
@@ -110,7 +110,7 @@ export default function DataCheck({ cycledate, khoi }) {
           <div>{fmtSo(sn.so_dong)} dòng · snapshot trước {sn.snapshot_truoc ? fmtNgay(sn.snapshot_truoc) : '—'}</div>
           <div>
             Có <code>warnington</code>: {fmtSo(sn.co_warnington)}/{fmtSo(sn.so_dong)}
-            {!tonOk && <span className="text-bad"> — thiếu thì CLC tính là "dưới 6T"</span>}
+            {!tonOk && <span className="text-red-600"> — thiếu thì CLC tính là "dưới 6T"</span>}
           </div>
           <div>Có HSD: {fmtSo(sn.co_expirydate)} dòng</div>
         </TrangThai>
@@ -120,15 +120,15 @@ export default function DataCheck({ cycledate, khoi }) {
           </div>
           <div>Cập nhật cuối: {d.master.cap_nhat_cuoi ? fmtNgay(d.master.cap_nhat_cuoi.slice(0, 10)) : '—'}</div>
           <div className="truncate" title={d.master.nguon}>Nguồn: {d.master.nguon || '—'}</div>
-          {thieuCoBu > 0 && <div className="text-bad">{thieuCoBu} mã có BU trong dm_vat_tu đang có tồn nhưng chưa có master</div>}
+          {thieuCoBu > 0 && <div className="text-red-600">{thieuCoBu} mã có BU trong dm_vat_tu đang có tồn nhưng chưa có master</div>}
         </TrangThai>
         <TrangThai ok={gvOk} title="GV bán TB tháng">
           <div>Kỳ đang dùng: {d.gv_ban.ky ? fmtNgay(d.gv_ban.ky) : 'chưa có'} · {d.gv_ban.so_nhom} nhóm</div>
-          {!gvOk && <div className="text-bad">Cần số kỳ {fmtNgay(kyCanChot)} — nạp file Excel mới bằng nap_excel.py</div>}
+          {!gvOk && <div className="text-red-600">Cần số kỳ {fmtNgay(kyCanChot)} — nạp file Excel mới bằng nap_excel.py</div>}
         </TrangThai>
         <TrangThai ok={!!daChot} title="Chốt kỳ">
           <div>
-            Kỳ {fmtNgay(kyCanChot)}: {daChot ? `đã chốt (${daChot.nguon})` : <span className="text-bad">chưa chốt</span>}
+            Kỳ {fmtNgay(kyCanChot)}: {daChot ? `đã chốt (${daChot.nguon})` : <span className="text-red-600">chưa chốt</span>}
           </div>
           {!daChot && (
             <div className="break-all font-mono text-[11px]">
@@ -145,7 +145,7 @@ export default function DataCheck({ cycledate, khoi }) {
         ok={thieuCoBu === 0}
         actions={
           <div className="flex flex-wrap items-center gap-2 text-sm">
-            <label className="flex items-center gap-1.5 text-xs text-ink2">
+            <label className="flex items-center gap-1.5 text-[12px] text-slate-500">
               <input type="checkbox" checked={chiCoBu} onChange={(e) => setChiCoBu(e.target.checked)} />
               Chỉ mã có BU trong dm_vat_tu
             </label>
@@ -153,10 +153,10 @@ export default function DataCheck({ cycledate, khoi }) {
               value={q}
               onChange={(e) => setQ(e.target.value)}
               placeholder="Tìm mã, tên, kho…"
-              className="w-48 rounded border border-line bg-page px-2 py-1 text-sm"
+              className="w-48 rounded-md border border-slate-200 px-2.5 py-1 text-[13px] outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
             />
-            <button className="rounded border border-line px-2 py-1 text-sm hover:bg-band" onClick={() => taiCsv(thieu, `thieu_master_${cycledate}.csv`)}>
-              Tải CSV
+            <button className="flex items-center gap-1 rounded-md border border-slate-200 px-2.5 py-1 text-[13px] text-slate-700 hover:bg-slate-50" onClick={() => taiCsv(thieu, `thieu_master_${cycledate}.csv`)}>
+              <Download size={13} /> CSV
             </button>
           </div>
         }
@@ -173,7 +173,7 @@ export default function DataCheck({ cycledate, khoi }) {
             { key: 'kho', label: 'Kho', wrap: true },
           ]}
         />
-        <p className="px-4 py-2 text-xs text-muted">
+        <p className="border-t border-slate-100 px-4 py-2 text-[11px] text-slate-400">
           Bổ sung các mã này (đơn giá, BU, nhóm SP, PL hàng hóa) vào sheet DuLieu_goc rồi chạy lại nap_excel.py. Mã không có BU phần lớn
           thuộc khối khác.
         </p>
@@ -184,12 +184,12 @@ export default function DataCheck({ cycledate, khoi }) {
         count={d.kho.length}
         ok
         actions={
-          <div className="flex flex-wrap gap-1">
+          <div className="flex flex-wrap items-center gap-1 rounded-md border border-slate-200 bg-white p-0.5">
             {PL_KHO.map((p) => (
               <button
                 key={p}
                 onClick={() => setPlKho(p)}
-                className={`rounded px-2 py-0.5 text-xs ${plKho === p ? 'bg-head-2 text-white' : 'border border-line text-ink2 hover:bg-band'}`}
+                className={`rounded px-2.5 py-1 text-[12px] ${plKho === p ? 'bg-blue-500 font-medium text-white' : 'text-slate-600 hover:bg-slate-50'}`}
               >
                 {p}
               </button>
@@ -206,10 +206,10 @@ export default function DataCheck({ cycledate, khoi }) {
             { key: 'so_dong_co_ton', label: 'Dòng có tồn', num: true },
             { key: 'so_dong_khoi', label: `Dòng thuộc ${khoi}`, num: true },
             { key: 'sl', label: 'SL tồn', num: true },
-            { key: 'kho_moi', label: '', render: (r) => (r.kho_moi ? <span className="text-xs text-bad">mới so snapshot trước</span> : '') },
+            { key: 'kho_moi', label: '', render: (r) => (r.kho_moi ? <Badge tone="amber">mới so snapshot trước</Badge> : '') },
           ]}
         />
-        <p className="px-4 py-2 text-xs text-muted">
+        <p className="border-t border-slate-100 px-4 py-2 text-[11px] text-slate-400">
           Phân loại theo đuôi mã kho: GU = gửi, HH = hết hạn, HU = hủy, KT = kiểm tra, còn lại = đạt.
         </p>
       </Muc>

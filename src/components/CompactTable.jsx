@@ -1,6 +1,7 @@
 import { Fragment, useMemo, useState } from 'react'
 import { fmtNgay } from '../lib/report'
 import { fmtHs, fmtPct, fmtTr } from '../lib/format'
+import { ChevronRight, TH } from './ui'
 
 // Ngưỡng tô cảnh báo
 export const NGUONG = { he_so: 6, pct_clc: 0.2, pct_xau: 0.03 }
@@ -83,10 +84,10 @@ function Spark({ values }) {
 }
 
 function Delta({ v, tr }) {
-  if (v == null || !Number.isFinite(v) || Math.abs(v) < (tr ? 0.5 : 0.0005)) return <span className="text-muted">·</span>
+  if (v == null || !Number.isFinite(v) || Math.abs(v) < (tr ? 0.5 : 0.0005)) return <span className="text-slate-300">·</span>
   const up = v > 0
   return (
-    <span className={up ? 'text-bad' : 'text-good'}>
+    <span className={`font-medium ${up ? 'text-red-600' : 'text-emerald-700'}`}>
       {up ? '▲' : '▼'} {tr ? fmtTr(Math.abs(v)) : fmtPct(Math.abs(v))}
     </span>
   )
@@ -96,10 +97,10 @@ function GiaTri({ c, v }) {
   if (c.fmt === 'spark') return <Spark values={v} />
   if (c.fmt === 'delta') return <Delta v={v} />
   if (c.fmt === 'deltaTr') return <Delta v={v} tr />
-  if (v == null || !Number.isFinite(v)) return <span className="text-muted">·</span>
+  if (v == null || !Number.isFinite(v)) return <span className="text-slate-300">·</span>
   if (c.fmt === 'pct') return fmtPct(v)
   if (c.fmt === 'hs') return fmtHs(v)
-  return Math.abs(v) < 0.5 ? <span className="text-muted">·</span> : fmtTr(v)
+  return Math.abs(v) < 0.5 ? <span className="text-slate-300">·</span> : fmtTr(v)
 }
 
 export default function CompactTable({ model, periods, tab, onDrill }) {
@@ -138,7 +139,7 @@ export default function CompactTable({ model, periods, tab, onDrill }) {
     // vạch mảnh 3px ở đáy ô, dài theo tỷ lệ với giá trị lớn nhất cùng cấp
     const style = w
       ? {
-          backgroundImage: 'linear-gradient(var(--s1), var(--s1))',
+          backgroundImage: 'linear-gradient(#7aa7fb, #7aa7fb)',
           backgroundRepeat: 'no-repeat',
           backgroundPosition: 'right 12px bottom 4px',
           backgroundSize: `calc((100% - 24px) * ${(w / 100).toFixed(3)}) 3px`,
@@ -148,59 +149,59 @@ export default function CompactTable({ model, periods, tab, onDrill }) {
       <td
         key={c.key}
         style={style}
-        className={`px-3 py-2 text-right num whitespace-nowrap ${c.strong ? 'font-semibold' : ''} ${c.muted ? 'text-ink2' : ''} ${warn ? 'bg-warn' : ''} ${click ? 'cursor-pointer hover:underline' : ''}`}
+        className={`num whitespace-nowrap px-3 py-2 text-right ${c.strong ? 'font-semibold text-slate-900' : ''} ${c.muted ? 'text-slate-500' : ''} ${warn ? 'bg-red-50 font-semibold text-red-700' : ''} ${click ? 'cursor-pointer hover:text-blue-600 hover:underline' : ''}`}
         onClick={click ? () => onDrill({ bu, nhom, cot: c.drill, label: c.label }) : undefined}
         title={warn ? 'Vượt ngưỡng cảnh báo' : click ? 'Xem chi tiết lô' : undefined}
       >
         <GiaTri c={c} v={v} />
         {c.share && level !== 'nhom' && r.tong_kd > 0 && typeof v === 'number' && Math.abs(v) >= 0.5 && (
-          <div className="text-[11px] font-normal text-muted">{fmtPct(v / r.tong_kd)}</div>
+          <div className="text-[11px] font-normal text-slate-400">{fmtPct(v / r.tong_kd)}</div>
         )}
       </td>
     )
   }
 
   return (
-    <div className="overflow-x-auto rounded-lg border border-line bg-surface">
+    <div className="scroll-shadow overflow-x-auto">
       <table className="min-w-full text-[13px]">
-        <thead className="sticky top-0 z-10 bg-band">
-          <tr className="text-left text-xs text-ink2">
-            <th className="sticky left-0 z-20 min-w-[240px] bg-band px-3 py-2 font-semibold">
-              <button className="text-head-2 hover:underline" onClick={() => setMo(tatCaMo ? new Set() : new Set(model.bus.map((g) => g.bu)))}>
+        <thead className="sticky top-0 z-10">
+          <tr className="bg-slate-50 text-left">
+            <th className={`${TH} sticky left-0 z-20 min-w-[260px] bg-slate-50 normal-case tracking-normal`}>
+              <button className="text-[12px] font-semibold text-blue-600 hover:underline" onClick={() => setMo(tatCaMo ? new Set() : new Set(model.bus.map((g) => g.bu)))}>
                 {tatCaMo ? '− Thu gọn tất cả' : '+ Mở tất cả nhóm SP'}
               </button>
             </th>
             {cols.map((c) => (
-              <th key={c.key} className="px-3 py-2 text-right align-bottom font-semibold">
+              <th key={c.key} className={`${TH} text-right align-bottom`}>
                 {c.label}
-                {c.sub && <div className="font-normal text-muted">{c.sub}</div>}
+                {c.sub && <div className="font-normal normal-case text-slate-400">{c.sub}</div>}
               </th>
             ))}
           </tr>
         </thead>
         <tbody>
-          <tr className="border-b-2 border-line bg-band font-bold">
-            <td className="sticky left-0 z-[1] bg-band px-3 py-2">Khối {model.khoiTen}</td>
+          <tr className="border-b border-blue-100 bg-blue-50 font-bold text-slate-900">
+            <td className="sticky left-0 z-[1] bg-blue-50 px-3 py-2.5">Khối {model.khoiTen}</td>
             {cols.map((c) => o(model.khoi, c, 'khoi', null, null))}
           </tr>
           {model.bus.map((g) => {
             const open = mo.has(g.bu)
             return (
               <Fragment key={g.bu}>
-                <tr className="border-t border-line font-semibold hover:bg-band">
-                  <td className="sticky left-0 z-[1] bg-surface px-3 py-2">
-                    <button className="flex items-center gap-2" onClick={() => toggle(g.bu)} aria-expanded={open}>
-                      <span className={`inline-block w-3 text-muted transition-transform ${open ? 'rotate-90' : ''}`}>▶</span>
+                <tr className="border-t border-slate-100 bg-white font-semibold text-slate-800 hover:bg-blue-50/40">
+                  <td className="sticky left-0 z-[1] bg-white px-3 py-2">
+                    <button className="flex items-center gap-2 hover:text-blue-600" onClick={() => toggle(g.bu)} aria-expanded={open}>
+                      <ChevronRight size={14} className={`text-slate-400 transition-transform ${open ? 'rotate-90' : ''}`} />
                       BU {g.bu}
-                      <span className="text-xs font-normal text-muted">{g.nhom.length} nhóm</span>
+                      <span className="text-[11px] font-normal text-slate-400">{g.nhom.length} nhóm</span>
                     </button>
                   </td>
                   {cols.map((c) => o(g.tong, c, 'bu', g.bu, null))}
                 </tr>
                 {open &&
                   g.nhom.map((r, i) => (
-                    <tr key={r.nhom_sp} className={`hover:bg-band ${i % 2 ? 'bg-page' : ''}`}>
-                      <td className={`sticky left-0 z-[1] py-1.5 pl-10 pr-3 text-ink2 ${i % 2 ? 'bg-page' : 'bg-surface'}`}>{r.nhom_sp}</td>
+                    <tr key={r.nhom_sp} className={`text-slate-700 hover:bg-blue-50/40 ${i % 2 ? 'bg-slate-50/50' : 'bg-white'}`}>
+                      <td className={`sticky left-0 z-[1] py-1.5 pl-10 pr-3 text-slate-600 ${i % 2 ? 'bg-[#f8f9fa]' : 'bg-white'}`}>{r.nhom_sp}</td>
                       {cols.map((c) => o(r, c, 'nhom', g.bu, r.nhom_sp))}
                     </tr>
                   ))}

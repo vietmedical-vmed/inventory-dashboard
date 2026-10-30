@@ -1,81 +1,81 @@
 import StackedBars from './StackedBars'
+import { Panel, TH } from './ui'
 import { fmtNgay, pct } from '../lib/report'
 import { fmtPct, fmtTr } from '../lib/format'
 
-const tdl = 'border border-line px-2 py-1 whitespace-nowrap text-left'
-const td = 'border border-line px-2 py-1 text-right num whitespace-nowrap'
-const th = 'border border-white/30 px-2 py-1.5 text-[11px] font-semibold text-white'
+const td = 'num whitespace-nowrap px-3 py-1.5 text-right'
 const BU_COLORS = ['var(--s1)', 'var(--s2)', 'var(--s3)', 'var(--s4)']
 
-function Card({ title, children }) {
+function Delta({ v, tr }) {
+  if (v == null || !Number.isFinite(v) || Math.abs(v) < (tr ? 0.5 : 0.0005)) return <span className="text-slate-300">·</span>
   return (
-    <section className="rounded-lg border border-line bg-surface p-4">
-      <h2 className="mb-3 text-sm font-bold uppercase tracking-wide text-head-2">{title}</h2>
-      {children}
-    </section>
+    <span className={`font-medium ${v > 0 ? 'text-red-600' : 'text-emerald-700'}`}>
+      {v > 0 ? '▲' : '▼'} {tr ? fmtTr(Math.abs(v)) : fmtPct(Math.abs(v))}
+    </span>
   )
 }
 
-function Delta({ v }) {
-  if (v == null || !Number.isFinite(v)) return null
-  return <span className={v > 0 ? 'text-bad' : v < 0 ? 'text-good' : ''}>{fmtPct(v, true)}</span>
+function Bang({ head, children }) {
+  return (
+    <div className="scroll-shadow overflow-x-auto border-t border-slate-100">
+      <table className="w-full border-collapse text-[13px]">
+        <thead>
+          <tr className="bg-slate-50">
+            {head.map((h, i) => (
+              <th key={i} className={`${TH} ${i ? 'text-right' : 'text-left'}`}>{h}</th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>{children}</tbody>
+      </table>
+    </div>
+  )
 }
 
 export function CanhBaoTonDong({ khoiTen, cot, nhanKy }) {
   const dong = [
     { key: 'tong_kd', label: 'Tổng tồn kho (hàng đang KD)', dam: true },
-    { key: 'het_han', label: 'Hàng hết date, hỏng', ty: true },
-    { key: 'cho_huy', label: 'Hàng đã duyệt chờ hủy', ty: true },
-    { key: 'loi_kt', label: 'Hàng lỗi/KT', ty: true },
-    { key: 'clc', label: 'Tổng giá trị CLC (chậm luân chuyển)', ty: true },
-    { key: 'ton_dong', label: 'Tổng tồn đọng (HH + Chờ hủy + Lỗi/KT + CLC)', ty: true, dam: true },
+    { key: 'het_han', label: 'Hàng hết date, hỏng', color: 'var(--st-critical)' },
+    { key: 'cho_huy', label: 'Hàng đã duyệt chờ hủy', color: 'var(--st-serious)' },
+    { key: 'loi_kt', label: 'Hàng lỗi / KT', color: 'var(--st-warning)' },
+    { key: 'clc', label: 'Chậm luân chuyển (CLC)', color: 'var(--st-clc)' },
+    { key: 'ton_dong', label: 'Tổng tồn đọng', dam: true },
   ]
-  const series = [
-    { key: 'het_han', label: 'Hết date, hỏng', color: 'var(--st-critical)' },
-    { key: 'cho_huy', label: 'Chờ hủy', color: 'var(--st-serious)' },
-    { key: 'loi_kt', label: 'Lỗi/KT', color: 'var(--st-warning)' },
-    { key: 'clc', label: 'Chậm luân chuyển', color: 'var(--s1)' },
-  ].map((s) => ({ ...s, values: cot.map((c) => c[s.key]) }))
+  const series = dong
+    .filter((d) => d.color)
+    .map((d) => ({ key: d.key, label: d.label, color: d.color, values: cot.map((c) => c[d.key]) }))
 
   return (
-    <Card title={`Cảnh báo tồn đọng - Khối ${khoiTen} (xu hướng 4 kỳ, Triệu VNĐ)`}>
-      <div className="grid gap-4 xl:grid-cols-[1.25fr_1fr]">
-        <div className="overflow-x-auto">
-          <table className="min-w-full border-collapse text-xs">
-            <thead>
-              <tr className="bg-head">
-                <th className={`${th} text-left`}>Chỉ tiêu</th>
-                {nhanKy.map((k) => <th key={k} className={th}>{k}</th>)}
-                <th className={th}>Δ so kỳ trước</th>
-              </tr>
-            </thead>
-            <tbody>
-              {dong.map((d) => {
-                const last = cot[cot.length - 1][d.key]
-                const prev = cot[cot.length - 2]?.[d.key]
-                return [
-                  <tr key={d.key} className={d.dam ? 'bg-band font-semibold' : ''}>
-                    <td className={`${tdl}`}>{d.label}</td>
-                    {cot.map((c, i) => <td key={i} className={td}>{fmtTr(c[d.key])}</td>)}
-                    <td className={td}>{last != null && prev != null ? fmtTr(last - prev) : ''}</td>
-                  </tr>,
-                  d.ty && (
-                    <tr key={d.key + '%'} className="text-ink2 italic">
-                      <td className={`${tdl} pl-5`}>% / Tổng tồn kho</td>
-                      {cot.map((c, i) => (
-                        <td key={i} className={td}>{c[d.key] != null && c.tong_kd ? fmtPct(c[d.key] / c.tong_kd) : ''}</td>
-                      ))}
-                      <td className={td} />
-                    </tr>
-                  ),
-                ]
-              })}
-            </tbody>
-          </table>
-        </div>
-        <StackedBars categories={nhanKy} series={series} />
+    <Panel title="Cảnh báo tồn đọng" subtitle={`Khối ${khoiTen} · xu hướng 4 kỳ · triệu VNĐ · % là tỷ trọng trên tổng tồn`}>
+      <div className="px-4 pb-2 pt-3">
+        <StackedBars categories={nhanKy} series={series} height={220} />
       </div>
-    </Card>
+      <Bang head={['Chỉ tiêu', ...nhanKy, 'Δ kỳ trước']}>
+        {dong.map((d, i) => {
+          const last = cot[cot.length - 1][d.key]
+          const prev = cot[cot.length - 2]?.[d.key]
+          return (
+            <tr key={d.key} className={`${d.dam ? 'font-semibold text-slate-900' : 'text-slate-700'} ${i % 2 ? 'bg-slate-50/50' : 'bg-white'} hover:bg-blue-50/40`}>
+              <td className="whitespace-nowrap px-3 py-1.5">
+                <span className="flex items-center gap-1.5">
+                  {d.color && <span className="h-2.5 w-2.5 rounded-sm" style={{ background: d.color }} aria-hidden />}
+                  {d.label}
+                </span>
+              </td>
+              {cot.map((c, j) => (
+                <td key={j} className={td}>
+                  {fmtTr(c[d.key])}
+                  {d.key !== 'tong_kd' && c[d.key] != null && c.tong_kd ? (
+                    <div className="text-[11px] font-normal text-slate-400">{fmtPct(c[d.key] / c.tong_kd)}</div>
+                  ) : null}
+                </td>
+              ))}
+              <td className={td}>{last != null && prev != null ? <Delta v={last - prev} tr /> : ''}</td>
+            </tr>
+          )
+        })}
+      </Bang>
+    </Panel>
   )
 }
 
@@ -88,44 +88,43 @@ export function XuHuongBu({ khoiTen, model, periods, nhanKy }) {
   const series = dong.map((d, i) => ({ key: d.bu, label: d.bu, color: BU_COLORS[i] || 'var(--muted)', values: d.values }))
 
   return (
-    <Card title={`Xu hướng tồn kho hàng đang KD theo BU - Khối ${khoiTen} (Triệu VNĐ)`}>
-      <div className="grid gap-4 xl:grid-cols-[1.25fr_1fr]">
-        <div className="overflow-x-auto">
-          <table className="min-w-full border-collapse text-xs">
-            <thead>
-              <tr className="bg-head">
-                <th className={`${th} text-left`}>BU</th>
-                {nhanKy.map((k) => <th key={k} className={th}>{k}</th>)}
-              </tr>
-            </thead>
-            <tbody>
-              {dong.map((d, i) => (
-                <tr key={d.bu}>
-                  <td className={`${tdl}`}>
-                    <span className="mr-1.5 inline-block h-2 w-2 rounded-sm" style={{ background: BU_COLORS[i] }} />
-                    {d.bu}
-                  </td>
-                  {d.values.map((v, j) => <td key={j} className={td}>{fmtTr(v)}</td>)}
-                </tr>
-              ))}
-              <tr className="bg-band font-bold">
-                <td className={`${tdl}`}>TỔNG KHỐI {khoiTen}</td>
-                {tong.map((v, j) => <td key={j} className={td}>{fmtTr(v)}</td>)}
-              </tr>
-              <tr className="text-ink2">
-                <td className={`${tdl}`}>Tăng/giảm so tháng trước (Triệu VNĐ)</td>
-                {tong.map((v, j) => <td key={j} className={td}>{j && v != null && tong[j - 1] != null ? fmtTr(v - tong[j - 1]) : ''}</td>)}
-              </tr>
-              <tr className="text-ink2">
-                <td className={`${tdl} pl-5`}>% tăng/giảm so tháng trước</td>
-                {tong.map((v, j) => <td key={j} className={td}>{j ? <Delta v={pct(v, tong[j - 1])} /> : ''}</td>)}
-              </tr>
-            </tbody>
-          </table>
-        </div>
-        <StackedBars categories={nhanKy} series={series} />
+    <Panel title="Xu hướng tồn kho theo BU" subtitle={`Khối ${khoiTen} · hàng đang KD · triệu VNĐ`}>
+      <div className="px-4 pb-2 pt-3">
+        <StackedBars categories={nhanKy} series={series} height={220} />
       </div>
-    </Card>
+      <Bang head={['BU', ...nhanKy]}>
+        {dong.map((d, i) => (
+          <tr key={d.bu} className={`text-slate-700 ${i % 2 ? 'bg-slate-50/50' : 'bg-white'} hover:bg-blue-50/40`}>
+            <td className="whitespace-nowrap px-3 py-1.5">
+              <span className="flex items-center gap-1.5">
+                <span className="h-2.5 w-2.5 rounded-sm" style={{ background: BU_COLORS[i] }} aria-hidden />
+                {d.bu}
+              </span>
+            </td>
+            {d.values.map((v, j) => <td key={j} className={td}>{fmtTr(v)}</td>)}
+          </tr>
+        ))}
+        <tr className="border-t border-blue-100 bg-blue-50 font-bold text-slate-900">
+          <td className="whitespace-nowrap px-3 py-1.5">Tổng khối</td>
+          {tong.map((v, j) => <td key={j} className={td}>{fmtTr(v)}</td>)}
+        </tr>
+        <tr className="bg-white text-slate-600">
+          <td className="whitespace-nowrap px-3 py-1.5">So tháng trước</td>
+          {tong.map((v, j) => (
+            <td key={j} className={td}>
+              {j ? (
+                <>
+                  <Delta v={v != null && tong[j - 1] != null ? v - tong[j - 1] : null} tr />
+                  <div className="text-[11px]"><Delta v={pct(v, tong[j - 1])} /></div>
+                </>
+              ) : (
+                ''
+              )}
+            </td>
+          ))}
+        </tr>
+      </Bang>
+    </Panel>
   )
 }
 

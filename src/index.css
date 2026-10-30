@@ -2,56 +2,73 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Palette theo bidding-and-contract / sale-target */
 :root {
-  color-scheme: light;
-  --page: #f9f9f7;
-  --surface: #fcfcfb;
-  --ink: #0b0b0b;
-  --ink-2: #52514e;
-  --muted: #898781;
-  --line: #e1e0d9;
-  --axis: #c3c2b7;
-  --head: #2e5395;
-  --head-2: #4472c4;
-  --band: #eef2f9;
-  --good: #006300;
-  --bad: #d03b3b;
-  --warn-bg: #fbe4e1;
-  --s1: #2a78d6;
-  --s2: #eb6834;
-  --s3: #1baf7a;
-  --s4: #eda100;
-  --st-critical: #d03b3b;
-  --st-serious: #ec835a;
-  --st-warning: #fab219;
-}
-@media (prefers-color-scheme: dark) {
-  :root:where(:not([data-theme='light'])) {
-    color-scheme: dark;
-    --page: #0d0d0d;
-    --surface: #1a1a19;
-    --ink: #f0efec;
-    --ink-2: #c3c2b7;
-    --muted: #898781;
-    --line: #2c2c2a;
-    --axis: #383835;
-    --head: #1f3a6b;
-    --head-2: #2c4f8f;
-    --band: #22262e;
-    --good: #0ca30c;
-    --bad: #e66767;
-    --warn-bg: #3d2322;
-    --s1: #3987e5;
-    --s2: #d95926;
-    --s3: #199e70;
-    --s4: #c98500;
-  }
+  --page: #f0f2f5;
+  --surface: #ffffff;
+  --ink: #18191a;
+  --ink-2: #65676b;
+  --muted: #8a8d91;
+  --line: #dadde1;
+  --axis: #ccd0d5;
+  --head: #0c5dc7;
+  --head-2: #1877f2;
+  --band: #f7f8fa;
+  --good: #2e7d32;
+  --bad: #e41e3f;
+  --warn-bg: #fdecee;
+  /* chuỗi màu biểu đồ: xanh thương hiệu, hổ phách, xanh ngọc */
+  --s1: #1877f2;
+  --s2: #f59e0b;
+  --s3: #14b8a6;
+  --s4: #8b5cf6;
+  /* tồn đọng */
+  --st-critical: #fa383e;
+  --st-serious: #ef7d85;
+  --st-warning: #f59e0b;
+  --st-clc: #7aa7fb;
 }
 
 body {
+  margin: 0;
   background: var(--page);
   color: var(--ink);
+  -webkit-font-smoothing: antialiased;
 }
+
+input,
+button,
+select,
+textarea {
+  font-family: inherit;
+}
+
 .num {
   font-variant-numeric: tabular-nums;
+}
+
+.spinner {
+  width: 32px;
+  height: 32px;
+  border: 3px solid #dadde1;
+  border-top-color: #1877f2;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.scroll-shadow::-webkit-scrollbar {
+  height: 8px;
+  width: 8px;
+}
+.scroll-shadow::-webkit-scrollbar-thumb {
+  background: #ccd0d5;
+  border-radius: 4px;
+}
+.scroll-shadow::-webkit-scrollbar-track {
+  background: transparent;
 }

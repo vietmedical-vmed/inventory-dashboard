@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { fmtTr } from '../lib/format'
 
 /**
@@ -7,7 +7,16 @@ import { fmtTr } from '../lib/format'
  */
 export default function StackedBars({ categories, series, height = 240, unit = 'Triệu VNĐ' }) {
   const [hover, setHover] = useState(null)
-  const W = 560
+  // vẽ theo đúng bề rộng khung (px thật) để chữ không phóng to theo màn hình
+  const box = useRef(null)
+  const [W, setW] = useState(560)
+  useEffect(() => {
+    const el = box.current
+    if (!el) return
+    const ro = new ResizeObserver(([e]) => setW(Math.max(280, Math.round(e.contentRect.width))))
+    ro.observe(el)
+    return () => ro.disconnect()
+  }, [])
   const pad = { l: 56, r: 12, t: 22, b: 28 }
   const iw = W - pad.l - pad.r
   const ih = height - pad.t - pad.b
@@ -19,8 +28,8 @@ export default function StackedBars({ categories, series, height = 240, unit = '
   const ticks = [0, 0.25, 0.5, 0.75, 1].map((t) => t * max)
 
   return (
-    <div className="relative">
-      <svg viewBox={`0 0 ${W} ${height}`} className="w-full h-auto" role="img" aria-label={series.map((s) => s.label).join(', ')}>
+    <div ref={box} className="relative">
+      <svg width={W} height={height} viewBox={`0 0 ${W} ${height}`} className="block" role="img" aria-label={series.map((s) => s.label).join(', ')}>
         {ticks.map((t) => (
           <g key={t}>
             <line x1={pad.l} x2={W - pad.r} y1={y(t)} y2={y(t)} stroke="var(--line)" strokeWidth="1" />
