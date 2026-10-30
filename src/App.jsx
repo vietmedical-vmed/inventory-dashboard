@@ -20,11 +20,10 @@ const nho = (k, v) => {
 }
 
 const TABS = [
-  { key: 'tong_quan', label: 'Tổng quan', sub: 'Tồn kho hàng đang kinh doanh theo BU / nhóm SP' },
+  { key: 'excel', label: 'Tổng quan', sub: 'Tồn kho hàng đang kinh doanh theo BU / nhóm SP, bố cục như file báo cáo Excel' },
   { key: 'hsd', label: 'Chất lượng HSD', sub: 'Phân loại theo hạn sử dụng và hàng hết date / chờ hủy / lỗi' },
   { key: 'clc', label: 'Luân chuyển (CLC)', sub: 'Phân loại theo thời gian tồn (warnington) và hệ số tồn kho' },
   { key: 'so_sanh', label: 'So sánh kỳ trước', sub: 'Tổng tồn kho hàng đang KD qua các kỳ' },
-  { key: 'excel', label: 'Bản Excel', sub: 'Bố cục đầy đủ như file báo cáo Excel' },
   { key: 'kiem_tra', label: 'Kiểm tra dữ liệu', sub: 'Độ đầy đủ của snapshot, master, GV bán và chốt kỳ' },
 ]
 
@@ -113,7 +112,7 @@ export default function App() {
   const [nonce, setNonce] = useState(0)
   const [tab, setTab] = useState(() => {
     const t = nho('inv.tab')
-    return TABS.some((x) => x.key === t) ? t : 'tong_quan'
+    return TABS.some((x) => x.key === t) ? t : TABS[0].key
   })
 
   useEffect(() => {

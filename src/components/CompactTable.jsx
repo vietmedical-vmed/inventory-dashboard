@@ -19,15 +19,6 @@ export function cotTheoTab(tab, periods) {
   const p3 = periods[periods.length - 1]
   const p2 = periods[periods.length - 2]
   switch (tab) {
-    case 'tong_quan':
-      return [
-        { key: 'tong_kd', label: 'Tổng tồn kho KD', val: (r) => r.tong_kd, fmt: 'tr', drill: null, bar: true, strong: true },
-        { key: 'dang_sd', label: 'Đang sử dụng', val: (r) => r.dang_sd, fmt: 'tr', drill: 'dang_sd', share: true },
-        { key: 'xau', label: 'Hết date + hủy + lỗi', val: (r) => r.xau, fmt: 'tr', drill: 'xau', bar: true, share: true, warn: (r) => chia(r.xau, r.tong_kd) > NGUONG.pct_xau },
-        { key: 'clc', label: 'Chậm luân chuyển', val: (r) => r.clc, fmt: 'tr', drill: 'clc', bar: true, share: true, warn: (r) => chia(r.clc, r.tong_kd) > NGUONG.pct_clc },
-        { key: 'gv', label: 'GV bán TB tháng', val: (r) => r.gv_ban_tb, fmt: 'tr' },
-        { key: 'he_so', label: 'Hệ số tồn kho (tháng)', val: (r) => r.he_so, fmt: 'hs', warn: (r) => r.he_so > NGUONG.he_so },
-      ]
     case 'hsd':
       return [
         { key: 'hsd_tren_12t', label: 'Trên 12T / Ko HSD', val: (r) => r.hsd_tren_12t, fmt: 'tr', drill: 'hsd_tren_12t', bar: true, share: true },
