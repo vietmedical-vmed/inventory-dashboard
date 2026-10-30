@@ -19,6 +19,8 @@ export function taiCsv(rows, ten) {
 const XANH = 'FF2E5395'
 const XANH2 = 'FF4472C4'
 const NEN = 'FFEEF2F9'
+// cột tô màu riêng (số cột): hết date + CLC đỏ, hệ số tồn kho tím
+const MAU_COT = { 7: 'FFE41E3F', 14: 'FFE41E3F', 16: 'FF7C3AED' }
 
 /** Xuất bảng báo cáo chính theo bố cục sheet Excel gốc (giá trị, không công thức). */
 export async function xuatExcel({ model, cycledate, khoi, canhBao, nhanKy }) {
@@ -50,7 +52,7 @@ export async function xuatExcel({ model, cycledate, khoi, canhBao, nhanKy }) {
   for (const r of [4, 5]) {
     ws.getRow(r).eachCell({ includeEmpty: true }, (cell, c) => {
       if (c > nCol) return
-      cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: r === 4 ? XANH : XANH2 } }
+      cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: MAU_COT[c] || (r === 4 ? XANH : XANH2) } }
       cell.font = { bold: true, color: { argb: 'FFFFFFFF' } }
       cell.alignment = { wrapText: true, vertical: 'middle', horizontal: 'center' }
     })
@@ -66,9 +68,12 @@ export async function xuatExcel({ model, cycledate, khoi, canhBao, nhanKy }) {
       if (c > nCol) return
       cell.border = { top: { style: 'thin' }, left: { style: 'thin' }, bottom: { style: 'thin' }, right: { style: 'thin' } }
       if (c >= 3) cell.numFmt = kieu === 'pct' ? '0.0%' : c === 16 ? '0.00' : '#,##0'
+      const mau = MAU_COT[c] ? { color: { argb: MAU_COT[c] } } : {}
       if (kieu === 'tong') {
-        cell.font = { bold: true }
+        cell.font = { bold: true, ...mau }
         cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: NEN } }
+      } else if (MAU_COT[c]) {
+        cell.font = mau
       }
     })
   }

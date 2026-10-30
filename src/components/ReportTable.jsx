@@ -13,6 +13,13 @@ const COT_SO = [
 // Cột sau phần giá trị: GV bán TB, hệ số tồn kho
 const SO_COT_SAU = 2
 
+// Cột tô màu riêng: hàng hết date và CLC màu đỏ, hệ số tồn kho màu tím
+const MAU = {
+  het_han: { th: '!bg-red-600', td: 'text-red-700' },
+  clc: { th: '!bg-red-600', td: 'text-red-700' },
+  he_so: { th: '!bg-violet-600', td: 'text-violet-700' },
+}
+
 const th = 'border border-white/30 px-2 py-1.5 font-semibold text-white text-[11px] leading-tight align-middle'
 const tdl = 'border border-slate-200 px-3 py-1.5 whitespace-nowrap text-left'
 const td = 'border border-slate-200 px-2 py-1.5 text-right num whitespace-nowrap'
@@ -26,7 +33,7 @@ function DongSo({ r, drill, onDrill }) {
         return (
           <td
             key={c.key}
-            className={`${td} ${c.tong ? 'bg-slate-50 font-semibold' : ''} ${click ? 'cursor-pointer hover:text-blue-600 hover:underline' : ''}`}
+            className={`${td} ${c.tong ? 'bg-slate-50 font-semibold' : ''} ${MAU[c.key]?.td ?? ''} ${click ? 'cursor-pointer hover:text-blue-600 hover:underline' : ''}`}
             onClick={click ? () => onDrill({ ...drill, cot: c.key === 'tong_kd' ? null : c.key, label: c.label }) : undefined}
             title={click ? 'Xem chi tiết lô' : undefined}
           >
@@ -35,7 +42,7 @@ function DongSo({ r, drill, onDrill }) {
         )
       })}
       <td className={td}>{fmtTr(r.gv_ban_tb)}</td>
-      <td className={td}>{fmtHs(r.he_so)}</td>
+      <td className={`${td} ${MAU.he_so.td}`}>{fmtHs(r.he_so)}</td>
     </>
   )
 }
@@ -51,14 +58,14 @@ export default function ReportTable({ g, onDrill }) {
             <th rowSpan={2} className={`${th} sticky left-0 min-w-[200px] bg-head text-left`}>Nhóm SP</th>
             <th colSpan={3} className={th}>Phân loại hàng theo HSD</th>
             <th rowSpan={2} className={`${th} w-24`}>Tổng GT hàng đang sử dụng</th>
-            <th rowSpan={2} className={`${th} w-20`}>Hàng hết date, hỏng</th>
+            <th rowSpan={2} className={`${th} ${MAU.het_han.th} w-20`}>Hàng hết date, hỏng</th>
             <th rowSpan={2} className={`${th} w-20`}>Hàng đã duyệt chờ hủy</th>
             <th rowSpan={2} className={`${th} w-20`}>Hàng lỗi/KT</th>
             <th rowSpan={2} className={`${th} w-24`}>Tổng tồn kho - Hàng đang KD</th>
             <th colSpan={3} className={th}>Phân loại theo mức độ luân chuyển</th>
-            <th rowSpan={2} className={`${th} w-20`}>Tổng giá trị CLC</th>
+            <th rowSpan={2} className={`${th} ${MAU.clc.th} w-20`}>Tổng giá trị CLC</th>
             <th rowSpan={2} className={`${th} w-24`}>GV bán TB tháng gần nhất</th>
-            <th rowSpan={2} className={`${th} w-16`}>Hệ số tồn kho TB</th>
+            <th rowSpan={2} className={`${th} ${MAU.he_so.th} w-16`}>Hệ số tồn kho TB</th>
           </tr>
           <tr className="bg-head-2">
             {COT_HSD.map((c) => <th key={c.key} className={th}>{c.label}</th>)}
