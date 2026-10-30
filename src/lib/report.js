@@ -147,11 +147,14 @@ function tenHienThi(rows) {
   }
 }
 
-/** Snapshot mới nhất của mỗi tháng (danh sách snapshot đã sắp giảm dần). */
-export function snapshotTheoThang(snapshots) {
-  const out = []
-  for (const s of snapshots) if (!out.some((x) => x.thang === s.slice(0, 7))) out.push({ thang: s.slice(0, 7), cycledate: s })
-  return out
+/**
+ * Tháng cho phép chọn: snapshot mới nhất mỗi tháng, chỉ giữ tháng đủ dữ liệu
+ * (có warnington để phân loại luân chuyển/CLC). Không tháng nào đủ thì trả tất cả.
+ */
+export async function layDanhSachThang() {
+  const rows = await rpc('ds_thang')
+  const du = rows.filter((r) => Number(r.co_warnington) > 0)
+  return du.length ? du : rows
 }
 
 export const pct = (a, b) => (a == null || b == null || b === 0 ? null : (a - b) / b)

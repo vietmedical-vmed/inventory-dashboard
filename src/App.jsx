@@ -5,7 +5,7 @@ import DetailDrawer from './components/DetailDrawer'
 import DataCheck from './components/DataCheck'
 import { CanhBaoTonDong, XuHuongBu, nhanCacKy } from './components/TrendSections'
 import { AlertTriangle, Download, FilterSelect, LoadingBlock, Panel, RefreshCw, RefreshingBar, Tabs } from './components/ui'
-import { fmtNgay, layDanhSachKhoi, layDanhSachSnapshot, snapshotTheoThang, taiBaoCao } from './lib/report'
+import { fmtNgay, layDanhSachKhoi, layDanhSachSnapshot, layDanhSachThang, taiBaoCao } from './lib/report'
 import { canhBaoTonDong, dungMoHinh } from './lib/model'
 import { fmtHs, fmtPct, fmtSo, fmtTr, fmtTy } from './lib/format'
 import { xuatExcel } from './lib/exportExcel'
@@ -107,6 +107,7 @@ function StatCard({ label, swatch, value, unit, sub, warn }) {
 
 export default function App() {
   const [snapshots, setSnapshots] = useState([])
+  const [thangs, setThangs] = useState([])
   const [cycledate, setCycledate] = useState(null)
   const [khoi, setKhoi] = useState(null)
   const [data, setData] = useState(null)
@@ -121,13 +122,14 @@ export default function App() {
   })
 
   useEffect(() => {
-    Promise.all([layDanhSachSnapshot(), layDanhSachKhoi()])
-      .then(([s, k]) => {
+    Promise.all([layDanhSachSnapshot(), layDanhSachKhoi(), layDanhSachThang()])
+      .then(([s, k, t]) => {
         setSnapshots(s)
+        setThangs(t)
         // hiện chỉ có khối Ngoại khoa nên không cần bộ lọc khối
         setKhoi(k[0] || null)
-        // mỗi tháng chỉ dùng snapshot mới nhất
-        const thang = snapshotTheoThang(s).map((x) => x.cycledate)
+        // mỗi tháng chỉ dùng snapshot mới nhất, ẩn tháng thiếu dữ liệu
+        const thang = t.map((x) => x.cycledate)
         setCycledate((cur) => (thang.includes(cur) ? cur : thang[0] || null))
       })
       .catch((e) => setErr(e.message))
@@ -220,7 +222,7 @@ export default function App() {
           <FilterSelect
             label="Tháng cập nhật"
             value={cycledate}
-            options={snapshotTheoThang(snapshots).map((x) => ({ value: x.cycledate, label: x.thang, hint: `số liệu ${fmtNgay(x.cycledate)}` }))}
+            options={thangs.map((x) => ({ value: x.cycledate, label: x.thang, hint: `số liệu ${fmtNgay(x.cycledate)}` }))}
             onChange={setCycledate}
           />
         </div>
