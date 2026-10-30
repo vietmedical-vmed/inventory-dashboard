@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import ReportTable from './components/ReportTable'
 import CompactTable, { NGUONG } from './components/CompactTable'
 import DetailDrawer from './components/DetailDrawer'
+import DataCheck from './components/DataCheck'
 import { CanhBaoTonDong, XuHuongBu, nhanCacKy } from './components/TrendSections'
 import { fmtNgay, layDanhSachKhoi, layDanhSachSnapshot, taiBaoCao } from './lib/report'
 import { canhBaoTonDong, dungMoHinh } from './lib/model'
@@ -38,6 +39,7 @@ const TABS = [
   { key: 'clc', label: 'Luân chuyển (CLC)' },
   { key: 'so_sanh', label: 'So sánh kỳ trước' },
   { key: 'excel', label: 'Bản Excel' },
+  { key: 'kiem_tra', label: 'Kiểm tra dữ liệu' },
 ]
 
 export default function App() {
@@ -217,26 +219,34 @@ export default function App() {
                 </button>
               ))}
             </div>
-            {tab === 'excel' ? (
+            {tab === 'kiem_tra' ? (
+              <DataCheck cycledate={cycledate} khoi={khoi} />
+            ) : tab === 'excel' ? (
               <ReportTable model={view.model} periods={data.periods} onDrill={onDrill} />
             ) : (
               <CompactTable model={view.model} periods={data.periods} tab={tab} onDrill={onDrill} />
             )}
-            <p className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted">
-              <span>Bấm vào ô số để xem chi tiết lô.</span>
-              {tab === 'so_sanh' ? (
-                <span><span className="text-bad">▲</span> tồn tăng · <span className="text-good">▼</span> tồn giảm</span>
-              ) : tab !== 'excel' ? (
-                <span className="flex items-center gap-1.5">
-                  <span className="inline-block h-3 w-3 rounded-sm bg-warn" /> vượt ngưỡng: hệ số tồn &gt; {NGUONG.he_so} tháng,
-                  CLC &gt; {fmtPct(NGUONG.pct_clc)}, hàng xấu &gt; {fmtPct(NGUONG.pct_xau)} tổng tồn
-                </span>
-              ) : null}
-            </p>
+            {tab !== 'kiem_tra' && (
+              <p className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted">
+                <span>Bấm vào ô số để xem chi tiết lô.</span>
+                {tab === 'so_sanh' ? (
+                  <span><span className="text-bad">▲</span> tồn tăng · <span className="text-good">▼</span> tồn giảm</span>
+                ) : tab !== 'excel' ? (
+                  <span className="flex items-center gap-1.5">
+                    <span className="inline-block h-3 w-3 rounded-sm bg-warn" /> vượt ngưỡng: hệ số tồn &gt; {NGUONG.he_so} tháng,
+                    CLC &gt; {fmtPct(NGUONG.pct_clc)}, hàng xấu &gt; {fmtPct(NGUONG.pct_xau)} tổng tồn
+                  </span>
+                ) : null}
+              </p>
+            )}
           </div>
 
-          <CanhBaoTonDong khoiTen={khoi} cot={view.canhBao} nhanKy={view.nhanKy} />
-          <XuHuongBu khoiTen={khoi} model={view.model} periods={data.periods} nhanKy={view.nhanKy} />
+          {tab !== 'kiem_tra' && (
+            <>
+              <CanhBaoTonDong khoiTen={khoi} cot={view.canhBao} nhanKy={view.nhanKy} />
+              <XuHuongBu khoiTen={khoi} model={view.model} periods={data.periods} nhanKy={view.nhanKy} />
+            </>
+          )}
         </div>
       )}
 

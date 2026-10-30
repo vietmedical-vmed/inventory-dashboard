@@ -108,6 +108,7 @@ const num = (rows) =>
 export const layDanhSachSnapshot = async () => (await rpc('ds_snapshot')).map((r) => r.cycledate)
 export const layDanhSachKhoi = async () => (await rpc('ds_khoi')).map((r) => r.khoi)
 export const layChiTiet = (args) => rpc('chi_tiet', args)
+export const layKiemTra = (cycledate, khoi) => rpc('kiem_tra', { p_cycledate: cycledate, p_khoi: khoi })
 
 /**
  * Tải toàn bộ số liệu cho 1 báo cáo:
