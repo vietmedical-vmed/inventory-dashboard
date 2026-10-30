@@ -32,7 +32,7 @@ const tenKhoi = (s) => s.toLocaleLowerCase('vi').replace(/(^|\s)(\S)/g, (_, a, b
 const TABS = [
   { key: 'excel', label: 'Tổng quan', sub: 'Tồn kho hàng đang kinh doanh theo BU / nhóm SP, bố cục như file báo cáo Excel' },
   { key: 'so_sanh', label: 'Xu hướng tồn kho', sub: 'Tổng tồn kho hàng đang KD qua các kỳ' },
-  { key: 'kiem_tra', label: 'Kiểm tra dữ liệu', sub: 'Độ đầy đủ của snapshot, master, GV bán và chốt kỳ' },
+  { key: 'kiem_tra', label: 'Kiểm tra dữ liệu', sub: 'Độ đầy đủ của snapshot, master, GV bán và chốt kỳ', admin: true },
 ]
 
 // Thành phần tổng tồn: đang SD + hết date + chờ hủy + lỗi KT
@@ -108,6 +108,8 @@ function StatCard({ label, swatch, value, unit, sub, warn }) {
 }
 
 function Dashboard({ user, onDangXuat }) {
+  // inventory-api cũng chặn kiem_tra với role khác admin
+  const tabs = useMemo(() => TABS.filter((t) => !t.admin || user.role === 'admin'), [user.role])
   const [snapshots, setSnapshots] = useState([])
   const [thangs, setThangs] = useState([])
   const [cycledate, setCycledate] = useState(null)
@@ -120,7 +122,7 @@ function Dashboard({ user, onDangXuat }) {
   const [nonce, setNonce] = useState(0)
   const [tab, setTab] = useState(() => {
     const t = nho('inv.tab')
-    return TABS.some((x) => x.key === t) ? t : TABS[0].key
+    return tabs.some((x) => x.key === t) ? t : tabs[0].key
   })
 
   useEffect(() => {
@@ -163,7 +165,7 @@ function Dashboard({ user, onDangXuat }) {
   const tdNay = cb?.[cb.length - 1]
   const tdTruoc = cb?.[cb.length - 2]
   const info = data?.info
-  const tabInfo = TABS.find((t) => t.key === tab)
+  const tabInfo = tabs.find((t) => t.key === tab)
   const ghiChu = data
     ? [
         ...(info && Number(info.co_warnington) === 0
@@ -242,7 +244,7 @@ function Dashboard({ user, onDangXuat }) {
         </div>
 
         <Tabs
-          tabs={TABS}
+          tabs={tabs}
           value={tab}
           onChange={(t) => {
             setTab(t)

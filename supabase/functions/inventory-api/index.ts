@@ -6,6 +6,7 @@
 //   body   : { fn, args }
 //
 //   fn = một RPC đọc trong schema app_inventory (xem RPC_DOC) → { ok, data }
+//        kiem_tra chỉ admin (RPC_ROLE), role khác nhận 403 no_permission.
 //   fn = 'lam_moi'  → { ok, token, expiresAt }  cấp lại token 2h (thông tin đọc lại từ shared.users)
 //
 //   Anon không gọi RPC trực tiếp được nữa (migration 20261030000006): mọi lần đọc phải có token
@@ -22,6 +23,8 @@ const RPC_DOC = new Set([
 ]);
 // Role được xem báo cáo; rỗng = mọi tài khoản đang active.
 const ROLE_DUOC_XEM: string[] = [];
+// RPC chỉ một số role được gọi (tab "Kiểm tra dữ liệu" chỉ admin xem).
+const RPC_ROLE: Record<string, string[]> = { kiem_tra: ["admin"] };
 const TOKEN_TTL_SEC = 2 * 60 * 60;
 
 const ALLOWED_ORIGINS = ["https://vietmedical-vmed.github.io"];
@@ -74,6 +77,9 @@ Deno.serve(async (req) => {
     }
 
     if (!RPC_DOC.has(fn)) throw new HttpError(400, "unknown_fn");
+    if (RPC_ROLE[fn] && !RPC_ROLE[fn].includes(String(user.role ?? "").trim().toLowerCase())) {
+      throw new HttpError(403, "no_permission", "Chỉ admin được xem kiểm tra dữ liệu");
+    }
     const args = body.args && typeof body.args === "object" ? body.args as Record<string, unknown> : {};
     const { data, error } = await db.schema("app_inventory").rpc(fn, args);
     if (error) throw new HttpError(400, "rpc_error", error.message);

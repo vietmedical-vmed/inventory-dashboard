@@ -21,6 +21,8 @@ Dùng chung tài khoản và token với portal và các app khác (`shared.user
   verify token, kiểm tra tài khoản còn active, rồi gọi RPC `security definer` trong `app_inventory`
   bằng service role. Anon không gọi RPC trực tiếp được (migration `20261030000006_chi_qua_api.sql`).
 - Giới hạn role được xem: sửa `ROLE_DUOC_XEM` trong `inventory-api` (rỗng = mọi tài khoản active).
+- Tab "Kiểm tra dữ liệu" chỉ role `admin` thấy; `inventory-api` cũng từ chối `kiem_tra` với role khác
+  (`RPC_ROLE`).
 - Khi `npm run dev`, các function đi qua proxy `/fn` của Vite vì `sale_target-login` chỉ mở CORS cho
   GitHub Pages.
 

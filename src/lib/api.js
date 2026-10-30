@@ -136,7 +136,8 @@ export async function goi(fn, args) {
   try {
     return (await post('inventory-api', { fn, args }, token)).data
   } catch (e) {
-    if (e.status === 401 || e.status === 403) {
+    // Token hỏng / tài khoản bị khoá thì đăng xuất; thiếu quyền một RPC (no_permission) thì không
+    if (e.status === 401 || e.code === 'forbidden') {
       dangXuat()
       khiHetPhien(e.message)
     }
