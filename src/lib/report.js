@@ -1,4 +1,4 @@
-import { db } from './supabase'
+import { goi } from './api'
 
 // Chỉ tiêu lưu trong ton_kho_ky
 export const CHI_TIEU = ['tong_kd', 'dang_sd', 'het_han', 'cho_huy', 'loi_kt', 'clc', 'xau']
@@ -22,9 +22,11 @@ export const COT_CLC = [
 const COT_GOC = [...COT_HSD, ...COT_XAU, ...COT_CLC].map((c) => c.key)
 
 async function rpc(name, args) {
-  const { data, error } = await db.rpc(name, args)
-  if (error) throw new Error(`${name}: ${error.message}`)
-  return data
+  try {
+    return await goi(name, args)
+  } catch (e) {
+    throw new Error(`${name}: ${e.message}`)
+  }
 }
 
 export const iso = (d) =>

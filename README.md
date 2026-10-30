@@ -8,8 +8,21 @@ Web app hiển thị báo cáo tồn kho theo khối / BU / nhóm SP, cùng form
 - Cảnh báo tồn đọng (xu hướng 4 kỳ) và xu hướng tồn kho theo BU, kèm biểu đồ.
 - Xuất Excel theo bố cục báo cáo gốc.
 
-**Stack:** React + Vite + Tailwind, Supabase (project DA). Không cần đăng nhập: frontend dùng
-publishable key và chỉ gọi RPC `security definer` trong schema `app_inventory`; bảng không đọc trực tiếp được.
+**Stack:** React + Vite + Tailwind, Supabase (project DA).
+
+## Đăng nhập
+
+Dùng chung tài khoản và token với portal và các app khác (`shared.users`):
+
+- Màn đăng nhập gọi Edge Function `sale_target-login` (giống portal), có đổi mật khẩu và khoá 15 phút
+  sau 5 lần sai. Token HMAC sống 2h, lưu ở `localStorage['vmed_token']`: vào từ portal thì không phải
+  đăng nhập lại. Còn dưới 30 phút thì app tự xin token mới; hết hạn thì quay về màn đăng nhập.
+- Mọi lần đọc dữ liệu đi qua Edge Function `inventory-api` (`supabase/functions/inventory-api`):
+  verify token, kiểm tra tài khoản còn active, rồi gọi RPC `security definer` trong `app_inventory`
+  bằng service role. Anon không gọi RPC trực tiếp được (migration `20261030000006_chi_qua_api.sql`).
+- Giới hạn role được xem: sửa `ROLE_DUOC_XEM` trong `inventory-api` (rỗng = mọi tài khoản active).
+- Khi `npm run dev`, các function đi qua proxy `/fn` của Vite vì `sale_target-login` chỉ mở CORS cho
+  GitHub Pages.
 
 ## Nguồn dữ liệu
 
@@ -64,6 +77,16 @@ Mã không đổi thuộc tính giữ phiên bản cũ; mã mới hoặc đổi 
 ```bash
 supabase db query --linked "select app_inventory.chot_ky('2026-10-31', '2026-10-25', 'NGOẠI KHOA')"
 ```
+
+## Edge Function
+
+```bash
+supabase functions deploy inventory-api --no-verify-jwt --project-ref nrfxymnfmjhbsgpipvkb
+```
+
+Secrets `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `TOKEN_SECRET` đã có sẵn ở project (dùng chung với
+`sale_target-login`). Thứ tự khi bật đăng nhập lần đầu: deploy `inventory-api` → deploy frontend →
+áp `20261030000006_chi_qua_api.sql`.
 
 ## Schema
 

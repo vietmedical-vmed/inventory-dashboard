@@ -3,12 +3,14 @@ import ReportTable from './components/ReportTable'
 import CompactTable, { NGUONG } from './components/CompactTable'
 import DetailDrawer from './components/DetailDrawer'
 import DataCheck from './components/DataCheck'
+import Login from './components/Login'
 import { CanhBaoTonDong, XuHuongBu, nhanCacKy } from './components/TrendSections'
-import { AlertTriangle, Download, FilterSelect, LoadingBlock, Panel, RefreshCw, RefreshingBar, Tabs } from './components/ui'
+import { AlertTriangle, Download, FilterSelect, LoadingBlock, LogOut, Panel, RefreshCw, RefreshingBar, Tabs } from './components/ui'
 import { fmtNgay, layDanhSachKhoi, layDanhSachSnapshot, layDanhSachThang, taiBaoCao } from './lib/report'
 import { canhBaoTonDong, dungMoHinh } from './lib/model'
 import { fmtHs, fmtPct, fmtSo, fmtTr, fmtTy } from './lib/format'
 import { xuatExcel } from './lib/exportExcel'
+import { dangXuat, layPhien, onHetPhien } from './lib/api'
 
 const nho = (k, v) => {
   try {
@@ -105,7 +107,7 @@ function StatCard({ label, swatch, value, unit, sub, warn }) {
   )
 }
 
-export default function App() {
+function Dashboard({ user, onDangXuat }) {
   const [snapshots, setSnapshots] = useState([])
   const [thangs, setThangs] = useState([])
   const [cycledate, setCycledate] = useState(null)
@@ -189,6 +191,9 @@ export default function App() {
               Designed and developed by <span className="font-semibold not-italic text-slate-500">Do Hoang Giang</span>
             </div>
             <div className="flex items-center gap-2">
+              <span className="hidden text-[12px] text-slate-500 sm:inline" title={user.username}>
+                {user.ho_ten}
+              </span>
               <button
                 type="button"
                 onClick={() => setNonce((n) => n + 1)}
@@ -212,6 +217,15 @@ export default function App() {
               >
                 <Download size={14} />
                 {exporting ? 'Đang xuất…' : 'Xuất Excel'}
+              </button>
+              <button
+                type="button"
+                onClick={onDangXuat}
+                title="Đăng xuất"
+                className="flex items-center gap-1.5 rounded-md border border-slate-200 bg-white px-3 py-1.5 text-[13px] font-semibold text-slate-700 hover:border-slate-300 hover:bg-slate-50"
+              >
+                <LogOut size={14} />
+                Đăng xuất
               </button>
             </div>
           </div>
@@ -331,5 +345,39 @@ export default function App() {
 
       {drill && <DetailDrawer drill={drill} cycledate={cycledate} khoi={khoi} tenNhom={data?.ten.nhom} onClose={closeDrill} />}
     </div>
+  )
+}
+
+export default function App() {
+  const [user, setUser] = useState(layPhien)
+  const [thongBao, setThongBao] = useState('')
+
+  useEffect(
+    () =>
+      onHetPhien((msg) => {
+        setThongBao(msg)
+        setUser(null)
+      }),
+    [],
+  )
+
+  if (!user)
+    return (
+      <Login
+        thongBao={thongBao}
+        onDangNhap={(u) => {
+          setThongBao('')
+          setUser(u)
+        }}
+      />
+    )
+  return (
+    <Dashboard
+      user={user}
+      onDangXuat={() => {
+        dangXuat()
+        setUser(null)
+      }}
+    />
   )
 }

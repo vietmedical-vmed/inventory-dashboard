@@ -38,6 +38,7 @@ export const ChevronRight = icon(['m9 6 6 6-6 6'])
 export const RefreshCw = icon(['M3 12a9 9 0 0 1 15-6.7L21 8', 'M21 3v5h-5', 'M21 12a9 9 0 0 1-15 6.7L3 16', 'M3 21v-5h5'])
 export const XIcon = icon(['M18 6 6 18', 'm6 6 12 12'])
 export const Download = icon(['M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4', 'm7 10 5 5 5-5', 'M12 15V3'])
+export const LogOut = icon(['M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4', 'm16 17 5-5-5-5', 'M21 12H9'])
 export const Search = icon(['m21 21-4.34-4.34', 'M11 17a6 6 0 1 0 0-12 6 6 0 0 0 0 12Z'])
 
 /** Khung nội dung có tiêu đề 13px + phụ đề 11px. */
