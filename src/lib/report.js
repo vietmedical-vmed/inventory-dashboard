@@ -112,6 +112,19 @@ export const layDanhSachKhoi = async () => (await rpc('ds_khoi')).map((r) => r.k
 export const layChiTiet = (args) => rpc('chi_tiet', args)
 export const layKiemTra = (cycledate, khoi) => rpc('kiem_tra', { p_cycledate: cycledate, p_khoi: khoi })
 
+// Nhóm hàng phải giải trình theo mã Bravo (cận date, hết date, chậm luân chuyển)
+export const LOAI_GIAI_TRINH = new Set(['hsd_6_12t', 'hsd_duoi_6t', 'het_han', 'clc_tren_24t', 'clc_tren_12t'])
+
+/** Giải trình của tháng chứa snapshot cho 1 nhóm: Map ma_bravo -> { noi_dung, nguoi_cap_nhat, cap_nhat_luc }. */
+export async function layGiaiTrinh(cycledate, loai) {
+  const rows = await rpc('ds_giai_trinh', { p_cycledate: cycledate, p_loai: loai })
+  return new Map(rows.map((r) => [r.ma_bravo, r]))
+}
+
+/** Ghi cùng nội dung cho nhiều mã; nội dung rỗng = xoá. */
+export const luuGiaiTrinh = (cycledate, loai, maBravo, noiDung) =>
+  rpc('luu_giai_trinh', { p_cycledate: cycledate, p_loai: loai, p_ma_bravo: maBravo, p_noi_dung: noiDung })
+
 /**
  * Tải toàn bộ số liệu cho 1 báo cáo:
  *  - hiện tại: bao_cao(snapshot)

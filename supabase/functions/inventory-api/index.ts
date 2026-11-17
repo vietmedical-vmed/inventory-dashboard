@@ -7,6 +7,7 @@
 //
 //   fn = một RPC đọc trong schema app_inventory (xem RPC_DOC) → { ok, data }
 //        kiem_tra chỉ admin (RPC_ROLE), role khác nhận 403 no_permission.
+//   fn = luu_giai_trinh → ghi giải trình theo mã Bravo; p_nguoi do server điền từ token.
 //   fn = 'lam_moi'  → { ok, token, expiresAt }  cấp lại token 2h (thông tin đọc lại từ shared.users)
 //
 //   Anon không gọi RPC trực tiếp được nữa (migration 20261030000006): mọi lần đọc phải có token
@@ -19,11 +20,14 @@ import { createClient, type SupabaseClient } from "https://esm.sh/@supabase/supa
 
 const RPC_DOC = new Set([
   "ds_snapshot", "ds_khoi", "ds_thang", "ds_ten_hien_thi", "ds_ton_kho_ky",
-  "bao_cao", "thong_tin_snapshot", "chi_tiet", "kiem_tra",
+  "bao_cao", "thong_tin_snapshot", "chi_tiet", "kiem_tra", "ds_giai_trinh",
 ]);
+// RPC ghi: server tự điền người cập nhật (p_nguoi) từ token, không lấy từ client.
+const RPC_GHI = new Set(["luu_giai_trinh"]);
 // Role được xem báo cáo; rỗng = mọi tài khoản đang active.
 const ROLE_DUOC_XEM: string[] = [];
 // RPC chỉ một số role được gọi (tab "Kiểm tra dữ liệu" chỉ admin xem).
+// Giải trình: thêm role vào luu_giai_trinh để giới hạn người được ghi (chưa khai = mọi tài khoản active).
 const RPC_ROLE: Record<string, string[]> = { kiem_tra: ["admin"] };
 const TOKEN_TTL_SEC = 2 * 60 * 60;
 
@@ -76,11 +80,12 @@ Deno.serve(async (req) => {
       return json({ ok: true, token, expiresAt: exp });
     }
 
-    if (!RPC_DOC.has(fn)) throw new HttpError(400, "unknown_fn");
+    if (!RPC_DOC.has(fn) && !RPC_GHI.has(fn)) throw new HttpError(400, "unknown_fn");
     if (RPC_ROLE[fn] && !RPC_ROLE[fn].includes(String(user.role ?? "").trim().toLowerCase())) {
-      throw new HttpError(403, "no_permission", "Chỉ admin được xem kiểm tra dữ liệu");
+      throw new HttpError(403, "no_permission", fn === "kiem_tra" ? "Chỉ admin được xem kiểm tra dữ liệu" : "Tài khoản không có quyền thực hiện thao tác này");
     }
-    const args = body.args && typeof body.args === "object" ? body.args as Record<string, unknown> : {};
+    const args = body.args && typeof body.args === "object" ? { ...body.args as Record<string, unknown> } : {};
+    if (RPC_GHI.has(fn)) args.p_nguoi = user.ho_va_ten || user.username;
     const { data, error } = await db.schema("app_inventory").rpc(fn, args);
     if (error) throw new HttpError(400, "rpc_error", error.message);
     return json({ ok: true, data });

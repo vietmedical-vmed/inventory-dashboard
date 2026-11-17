@@ -23,6 +23,11 @@ Dùng chung tài khoản và token với portal và các app khác (`shared.user
 - Giới hạn role được xem: sửa `ROLE_DUOC_XEM` trong `inventory-api` (rỗng = mọi tài khoản active).
 - Tab "Kiểm tra dữ liệu" chỉ role `admin` thấy; `inventory-api` cũng từ chối `kiem_tra` với role khác
   (`RPC_ROLE`).
+- **Giải trình** (bảng `app_inventory.giai_trinh`, migration `20261030000007_giai_trinh.sql`): bấm ô của 5 cột
+  HSD 6-12 tháng, dưới 6 tháng, hết date/hỏng, tồn kho trên 24T, trên 12T → drawer chi tiết lô có ô tích trước
+  "Mã hàng" (tích ô tiêu đề = chọn tất cả mã đang lọc) và nút "Giải trình". Giải trình lưu theo
+  tháng + nhóm + mã Bravo (các lô cùng mã dùng chung). Ghi qua `luu_giai_trinh` trong `inventory-api`; người
+  cập nhật do server điền từ token. Muốn giới hạn người ghi: thêm `luu_giai_trinh` vào `RPC_ROLE`.
 - Khi `npm run dev`, các function đi qua proxy `/fn` của Vite vì `sale_target-login` chỉ mở CORS cho
   GitHub Pages.
 
