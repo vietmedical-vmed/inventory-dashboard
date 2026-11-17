@@ -119,7 +119,16 @@ export default function DetailDrawer({ drill, cycledate, khoi, tenNhom = (bu, n)
     setErr(null)
     setChon(new Set())
     layChiTiet({ p_cycledate: cycledate, p_khoi: khoi, p_bu: drill.bu, p_nhom_sp: drill.nhom, p_cot: drill.cot })
-      .then(setRows)
+      // mã hàng A → Z; các lô cùng mã xếp liền nhau, giá trị lớn trước
+      .then((r) =>
+        setRows(
+          [...r].sort(
+            (a, b) =>
+              (a.ma_bravo || '').localeCompare(b.ma_bravo || '', 'vi', { numeric: true }) ||
+              Number(b.gia_tri || 0) - Number(a.gia_tri || 0),
+          ),
+        ),
+      )
       .catch((e) => setErr(e.message))
   }, [drill, cycledate, khoi])
 
